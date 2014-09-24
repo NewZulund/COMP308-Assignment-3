@@ -63,9 +63,14 @@ G308_Geometry * cube;
 G308_Geometry * teapot;
 G308_Geometry * bunny;
 
+float zoom = 1;
+float xRot = 0;
+float yRot = 0;
+float zRot = 0;
 
 void loadObjects();
 void drawObjects();
+void setCamera();
 
 void init(char* filename) {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -84,7 +89,8 @@ void init(char* filename) {
 	if (strcmp(extension, "jpg") == 0 || strcmp(extension, "jpeg") == 0)
 		loadTextureFromJPEG(filename, &t);
 	else if (strcmp(extension, "png") == 0)
-		loadTextureFromPNG(filename, &t);
+		//Do nothing
+		1+1;
 	else {
 		printf("Invalid format. Only supports JPEG and PNG.\n");
 		exit(1);
@@ -116,7 +122,8 @@ void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//If we're using alpha, we need to do this
 
-	/*
+	setCamera();
+
 	glColor3f(0,0,0);
 	if (t.hasAlpha) {
 		glEnable(GL_BLEND);
@@ -153,7 +160,7 @@ void display(void) {
 		glDisable(GL_ALPHA);
 	}
 	glDisable(GL_TEXTURE_2D);
-	 */
+
 
 
 	//3D
@@ -209,12 +216,14 @@ void drawObjects(){
 	glPushMatrix();
 	glLoadIdentity();
 	glColor3f(1,1,1);
+	glTranslatef(0,0,-10);
 	printf("Drawing Objects \n");
 	table->RenderGeometry();
 	bunny->RenderGeometry();
 	sphere->RenderGeometry();
 	teapot->RenderGeometry();
 	torus->RenderGeometry();
+	glutSolidTeapot(1);
 	glPopMatrix();
 }
 
@@ -233,4 +242,24 @@ void loadObjects(){
 	sphere->ReadOBJ("Sphere.obj");
 	teapot->ReadOBJ("Teapot.obj");
 	torus->ReadOBJ("Torus.obj");
+}
+void setCamera(){
+	glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(G308_FOVY, (double) g_nWinWidth / (double) g_nWinHeight,
+		G308_ZNEAR_3D, G308_ZFAR_3D);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+
+		gluLookAt(0.0, 0.0, 7.0 + zoom, 0, 0, 0, 0.0, 1.0, 0.0);
+
+		glRotatef(xRot,1,0,0);
+		glRotatef(yRot,0,1,0);
+		glRotatef(zRot,0,0,1);
+		glTranslatef(xOffset,yOffset,zOffset);
+	}
+
+
+
+}
 }

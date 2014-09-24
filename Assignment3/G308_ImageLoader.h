@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <jpeglib.h>
 #include <jerror.h>
-#include <png.h>
 
 //Magic defines for libPNG because they removed them from the library
 #define png_infopp_NULL (png_infopp)NULL
