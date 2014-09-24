@@ -116,6 +116,7 @@ void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//If we're using alpha, we need to do this
 
+	/*
 	glColor3f(0,0,0);
 	if (t.hasAlpha) {
 		glEnable(GL_BLEND);
@@ -152,13 +153,16 @@ void display(void) {
 		glDisable(GL_ALPHA);
 	}
 	glDisable(GL_TEXTURE_2D);
+	 */
 
 
+	//3D
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glShadeModel(GL_SMOOTH);
 	drawObjects();
-
-
-
-
+	glPopMatrix();
+	glFlush();
 
 }
 
@@ -202,6 +206,8 @@ int main(int argc, char** argv) {
 	return 0;
 }
 void drawObjects(){
+	glPushMatrix();
+	glLoadIdentity();
 	glColor3f(1,1,1);
 	printf("Drawing Objects \n");
 	table->RenderGeometry();
@@ -209,6 +215,7 @@ void drawObjects(){
 	sphere->RenderGeometry();
 	teapot->RenderGeometry();
 	torus->RenderGeometry();
+	glPopMatrix();
 }
 
 void loadObjects(){
