@@ -17,6 +17,9 @@
 #include "G308_ImageLoader.h"
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
+
+int material;
 
 G308_Geometry::G308_Geometry(void) {
 	m_pVertexArray = NULL;
@@ -25,6 +28,8 @@ G308_Geometry::G308_Geometry(void) {
 	m_pTriangles = NULL;
 
 	mode = G308_SHADE_POLYGON;
+
+	material = 0;
 
 	m_nNumPoint = m_nNumUV = m_nNumPolygon = 0;
 	m_glGeomListPoly = m_glGeomListWire = 0;
@@ -187,7 +192,10 @@ void G308_Geometry::ReadOBJ(const char *filename) {
 // Create a 2D GL texture from the file given
 //--------------------------------------------------------------
 void G308_Geometry::ReadTexture(const char* filename) {
-	//Your code here
+	char file[50];
+	strncpy(file,filename,51);
+	TextureInfo i;
+	material = loadTextureFromJPEG(file, &i);
 }
 
 //--------------------------------------------------------------
@@ -241,7 +249,7 @@ void G308_Geometry::CreateGLPolyGeometry() {
 		G308_UVcoord UV3 = m_pUVArray[curTri.t3];
 
 		glShadeModel(GL_SMOOTH);
-		glColor3d(1.0f, 0.0f, 1.0f);
+		//glColor3d(1.0f, 0.0f, 1.0f);
 
 		glBegin(GL_TRIANGLES);
 		glNormal3f(N1.x, N1.y, N1.z);
@@ -289,7 +297,7 @@ void G308_Geometry::RenderGeometry() {
 			G308_UVcoord UV3 = m_pUVArray[curTri.t3];
 
 			glShadeModel(GL_SMOOTH);
-			glColor3d(1.0f, 0.0f, 1.0f);
+			//glColor3d(1.0f, 0.0f, 1.0f);
 
 			glBegin(GL_TRIANGLES);
 			glNormal3f(N1.x, N1.y, N1.z);

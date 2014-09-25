@@ -76,7 +76,7 @@ void setLight();
 
 void init(char* filename) {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
-	glShadeModel(GL_FLAT);
+	glShadeModel(GL_SMOOTH);
 	glEnable(GL_DEPTH_TEST);
 
 	unsigned int i;
@@ -127,7 +127,7 @@ void display(void) {
 	setCamera();
 
 	glPushMatrix();
-	glRotatef(45.0f,0.0f,0.0f,0.0f);
+	//glRotatef(45.0f,0.0f,0.0f,0.0f);
 	setLight();
 
 	glColor3f(0,0,0);
@@ -249,36 +249,41 @@ void drawObjects(){
 		glPushMatrix();
 		glScalef(0.2f,0.2f,0.2f);
 		glTranslatef(0,0,0);
+		glColor3f(1,1,1);
 		table->RenderGeometry();
 		glPopMatrix();
 
 		glPushMatrix();
 		glScalef(0.2f,0.2f,0.2f);
 		glTranslatef(0,0,0);
+		glColor3f(1,1,1);
 		bunny->RenderGeometry();
 		glPopMatrix();
 
 		glPushMatrix();
 		glScalef(0.2f,0.2f,0.2f);
 		glTranslatef(-4,2,4);
+		glColor3f(1,1,0);
 		sphere->RenderGeometry();
 		glPopMatrix();
 
 		glPushMatrix();
 		glScalef(0.2f,0.2f,0.2f);
 		glTranslatef(-4,0,-4);
+		glColor3f(0.5f,0.5f,1);
 		teapot->RenderGeometry();
 		glPopMatrix();
 
 		glPushMatrix();
 		glScalef(0.2f,0.2f,0.2f);
 		glTranslatef(4.0f,1.0f,4.0f);
+		glColor3f(1,0,0);
 		torus->RenderGeometry();
 		glPopMatrix();
 
 		glPushMatrix();
 		glScalef(0.2f,0.2f,0.2f);
-		glTranslatef(4.0f,0.0f,-4.0f);
+		glTranslatef(4.0f,2.0f,-4.0f);
 		box->RenderGeometry();
 		glPopMatrix();
 
@@ -334,14 +339,43 @@ void setCamera(){
 
 // Set Light
 void setLight() {
-	float direction[] = { 0.0f, 0.0f, 1.0f, 0.0f };
-	float diffintensity[] = { 0.4f, 0.4f, 0.4f, 1.0f };
-	float ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	//Spotlight
+	float spotdirection[] = { 0.0f, -1.0f, 0.0f, 0.0f };
+	float spotposition[] = { 0.0f, 5.0f, 0.1f, 1.0f };
+	float spotdiffintensity[] = { 0.15f, 0.15f, 0.15f, 1.0f };
+	float spotambient[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	const float expo = 2.0f;
 
-	glLightfv(GL_LIGHT0, GL_POSITION, direction);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffintensity);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
-
+	glLightfv(GL_LIGHT0, GL_POSITION, spotposition);
+	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, spotdirection);
+	glLightfv(GL_LIGHT0, GL_SPOT_EXPONENT, &expo);
+	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 7.0f);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, spotdiffintensity);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, spotambient);
 	glEnable(GL_LIGHT0);
+	//glutSolidSphere(1,10,10);
+
+	//Point light
+	glPushMatrix();
+	glTranslatef(-1,1,2);
+	float pointdirection[] = { 0.0f, -1.0f, 0.0f, 1.0f };
+	float pointdiffintensity[] = { 0.17f, 0.17f, 0.13f, 1.0f };
+	float pointambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+	glLightfv(GL_LIGHT1, GL_POSITION, pointdirection);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, pointdiffintensity);
+	glLightfv(GL_LIGHT1, GL_AMBIENT, pointambient);
+	glEnable(GL_LIGHT1);
+	glPopMatrix();
+
+	//Ambient light
+	glPushMatrix();
+	glTranslatef(-1,1,2);
+	float ambient[] = { 0.1f, 0.1f, 0.0f, 1.0f };
+	glLightfv(GL_LIGHT2, GL_AMBIENT, ambient);
+	glEnable(GL_LIGHT2);
+	glPopMatrix();
+
+
 }
 
