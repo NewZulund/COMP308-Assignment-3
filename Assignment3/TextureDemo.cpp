@@ -188,9 +188,16 @@ void keyboard(unsigned char key, int x, int y) {
 	case 27:
 		exit(0);
 		break;
+	case '.':
+		yRot+= 5;
+		break;
+	case ',':
+		yRot-= 5;
+		break;
 	default:
 		break;
 	}
+	glutPostRedisplay();
 }
 
 int main(int argc, char** argv) {
@@ -214,17 +221,40 @@ int main(int argc, char** argv) {
 }
 void drawObjects(){
 	glPushMatrix();
-	glLoadIdentity();
 	glColor3f(1,1,1);
 	glTranslatef(0,0,-10);
 	printf("Drawing Objects \n");
-	table->RenderGeometry();
-	bunny->RenderGeometry();
-	sphere->RenderGeometry();
-	teapot->RenderGeometry();
-	torus->RenderGeometry();
+
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_COLOR_MATERIAL);
+
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+	glColor3f(1.0f,0.0f,0.0f); /* set object color as red */
+		table->RenderGeometry();
+		bunny->RenderGeometry();
+		sphere->RenderGeometry();
+		teapot->RenderGeometry();
+		torus->RenderGeometry();
+
+
+//		glBegin(GL_TRIANGLES);
+//			glColor3f(1,1,1);
+//			glVertex3f(-2.0, -1.0, -1.0);
+//			glVertex3f(-2.0, 1.0, -1.0);
+//			glVertex3f(-0.0, 1.0, -1.0);
+//		glEnd();
+
 	glutSolidTeapot(1);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_COLOR_MATERIAL);
+
 	glPopMatrix();
+
+
+
 }
 
 void loadObjects(){
@@ -246,8 +276,7 @@ void loadObjects(){
 void setCamera(){
 	glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(G308_FOVY, (double) g_nWinWidth / (double) g_nWinHeight,
-		G308_ZNEAR_3D, G308_ZFAR_3D);
+		gluPerspective(G308_FOVY, (double) G308_WIN_WIDTH / (double) G308_WIN_HEIGHT, G308_ZNEAR_3D, G308_ZFAR_3D);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 
@@ -256,10 +285,4 @@ void setCamera(){
 		glRotatef(xRot,1,0,0);
 		glRotatef(yRot,0,1,0);
 		glRotatef(zRot,0,0,1);
-		glTranslatef(xOffset,yOffset,zOffset);
-	}
-
-
-
-}
 }
