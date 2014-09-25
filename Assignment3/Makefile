@@ -12,7 +12,7 @@ TextureDemo.o : TextureDemo.cpp
 	$(CC) -c $(CFLAGS) TextureDemo.cpp $(IPATH)  
 G308_ImageLoader.o :
 	$(CC) -c $(CFLAGS) G308_ImageLoader.cpp $(IPATH)
-G308_Geometry.o :
+G308_Geometry.o : G308_Geometry.cpp G308_Geometry.h 
 	$(CC) -c $(CFLAGS) G308_Geometry.cpp $(IPATH)
 clean :
 	rm -rf *.o

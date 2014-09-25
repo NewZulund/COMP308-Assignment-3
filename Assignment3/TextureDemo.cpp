@@ -62,6 +62,7 @@ G308_Geometry * torus;
 G308_Geometry * cube;
 G308_Geometry * teapot;
 G308_Geometry * bunny;
+G308_Geometry * box;
 
 float zoom = 1;
 float xRot = 0;
@@ -71,6 +72,7 @@ float zRot = 0;
 void loadObjects();
 void drawObjects();
 void setCamera();
+void setLight();
 
 void init(char* filename) {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -123,6 +125,10 @@ void display(void) {
 	//If we're using alpha, we need to do this
 
 	setCamera();
+
+	glPushMatrix();
+	glRotatef(45.0f,0.0f,0.0f,0.0f);
+	setLight();
 
 	glColor3f(0,0,0);
 	if (t.hasAlpha) {
@@ -188,11 +194,17 @@ void keyboard(unsigned char key, int x, int y) {
 	case 27:
 		exit(0);
 		break;
-	case '.':
+	case 'd':
 		yRot+= 5;
 		break;
-	case ',':
+	case 'a':
 		yRot-= 5;
+		break;
+	case 'w':
+		xRot-= 5;
+		break;
+	case 's':
+		xRot+= 5;
 		break;
 	default:
 		break;
@@ -216,13 +228,14 @@ int main(int argc, char** argv) {
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
+	display();
 	glutMainLoop();
 	return 0;
 }
 void drawObjects(){
 	glPushMatrix();
 	glColor3f(1,1,1);
-	glTranslatef(0,0,-10);
+	//glTranslatef(0,0,-10);
 	printf("Drawing Objects \n");
 
 
@@ -232,12 +245,42 @@ void drawObjects(){
 
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	glColor3f(1.0f,0.0f,0.0f); /* set object color as red */
-		table->RenderGeometry();
-		bunny->RenderGeometry();
-		sphere->RenderGeometry();
-		teapot->RenderGeometry();
-		torus->RenderGeometry();
 
+		glPushMatrix();
+		glScalef(0.2f,0.2f,0.2f);
+		glTranslatef(0,0,0);
+		table->RenderGeometry();
+		glPopMatrix();
+
+		glPushMatrix();
+		glScalef(0.2f,0.2f,0.2f);
+		glTranslatef(0,0,0);
+		bunny->RenderGeometry();
+		glPopMatrix();
+
+		glPushMatrix();
+		glScalef(0.2f,0.2f,0.2f);
+		glTranslatef(-4,2,4);
+		sphere->RenderGeometry();
+		glPopMatrix();
+
+		glPushMatrix();
+		glScalef(0.2f,0.2f,0.2f);
+		glTranslatef(-4,0,-4);
+		teapot->RenderGeometry();
+		glPopMatrix();
+
+		glPushMatrix();
+		glScalef(0.2f,0.2f,0.2f);
+		glTranslatef(4.0f,1.0f,4.0f);
+		torus->RenderGeometry();
+		glPopMatrix();
+
+		glPushMatrix();
+		glScalef(0.2f,0.2f,0.2f);
+		glTranslatef(4.0f,0.0f,-4.0f);
+		box->RenderGeometry();
+		glPopMatrix();
 
 //		glBegin(GL_TRIANGLES);
 //			glColor3f(1,1,1);
@@ -246,7 +289,6 @@ void drawObjects(){
 //			glVertex3f(-0.0, 1.0, -1.0);
 //		glEnd();
 
-	glutSolidTeapot(1);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glDisable(GL_COLOR_MATERIAL);
@@ -264,14 +306,17 @@ void loadObjects(){
 	sphere = new G308_Geometry();
 	teapot = new G308_Geometry();
 	torus = new G308_Geometry();
+	box = new G308_Geometry();
 
 	printf("Reached loading objects \n");
 	table->ReadOBJ("Table.obj");
-	//table->ReadTexture("wood.jpg");
+	table->ReadTexture("wood.jpg");
 	bunny->ReadOBJ("Bunny.obj");
 	sphere->ReadOBJ("Sphere.obj");
 	teapot->ReadOBJ("Teapot.obj");
 	torus->ReadOBJ("Torus.obj");
+	box->ReadOBJ("Box.obj");
+	box->ReadTexture("brick.jpg");
 }
 void setCamera(){
 	glMatrixMode(GL_PROJECTION);
@@ -280,9 +325,23 @@ void setCamera(){
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 
-		gluLookAt(0.0, 0.0, 7.0 + zoom, 0, 0, 0, 0.0, 1.0, 0.0);
+		gluLookAt(0.0, 3.0, 10.0 + zoom, 0, 0, 0, 0.0, 1.0, 0.0);
 
 		glRotatef(xRot,1,0,0);
 		glRotatef(yRot,0,1,0);
 		glRotatef(zRot,0,0,1);
 }
+
+// Set Light
+void setLight() {
+	float direction[] = { 0.0f, 0.0f, 1.0f, 0.0f };
+	float diffintensity[] = { 0.4f, 0.4f, 0.4f, 1.0f };
+	float ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+
+	glLightfv(GL_LIGHT0, GL_POSITION, direction);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffintensity);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+
+	glEnable(GL_LIGHT0);
+}
+

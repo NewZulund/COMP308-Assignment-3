@@ -262,57 +262,48 @@ void G308_Geometry::CreateGLPolyGeometry() {
 }
 
 void G308_Geometry::CreateGLWireGeometry() {
-	if (m_glGeomListWire != 0)
-		glDeleteLists(m_glGeomListWire, 1);
-
-	// Assign a display list; return 0 if err
-	m_glGeomListWire = glGenLists(1);
-	glNewList(m_glGeomListWire, GL_COMPILE);
-
-	for (int i = 0; i < m_nNumPolygon; i++) {
-		glBegin(GL_LINE_LOOP);
-		glNormal3f(m_pNormalArray[m_pTriangles[i].n1].x,
-				m_pNormalArray[m_pTriangles[i].n1].y,
-				m_pNormalArray[m_pTriangles[i].n1].z);
-		glVertex3f(m_pVertexArray[m_pTriangles[i].v1].x,
-				m_pVertexArray[m_pTriangles[i].v1].y,
-				m_pVertexArray[m_pTriangles[i].v1].z);
-		glNormal3f(m_pNormalArray[m_pTriangles[i].n2].x,
-				m_pNormalArray[m_pTriangles[i].n2].y,
-				m_pNormalArray[m_pTriangles[i].n2].z);
-		glVertex3f(m_pVertexArray[m_pTriangles[i].v2].x,
-				m_pVertexArray[m_pTriangles[i].v2].y,
-				m_pVertexArray[m_pTriangles[i].v2].z);
-		glNormal3f(m_pNormalArray[m_pTriangles[i].n3].x,
-				m_pNormalArray[m_pTriangles[i].n3].y,
-				m_pNormalArray[m_pTriangles[i].n3].z);
-		glVertex3f(m_pVertexArray[m_pTriangles[i].v3].x,
-				m_pVertexArray[m_pTriangles[i].v3].y,
-				m_pVertexArray[m_pTriangles[i].v3].z);
-		glEnd();
-	}
-
-	glEndList();
 
 }
 void G308_Geometry::toggleMode() {
-	if (mode == G308_SHADE_POLYGON) {
-		mode = G308_SHADE_WIREFRAME;
-	} else {
-		mode = G308_SHADE_POLYGON;
-	}
+
 }
 
 void G308_Geometry::RenderGeometry() {
-
 	printf("Rendering something \n");
+	glCallList(m_glGeomListPoly);
 
-	if (mode == G308_SHADE_POLYGON) {
-		glCallList(m_glGeomListPoly);
-	} else if (mode == G308_SHADE_WIREFRAME) {
-		glCallList(m_glGeomListWire);
-	} else {
-		printf("Warning: Wrong Shading Mode. \n");
+	int count = 0;
+	for (; count < m_nNumPolygon; count++) {
+			G308_Triangle curTri = m_pTriangles[count];
+
+			G308_Point P1 = m_pVertexArray[curTri.v1];
+			G308_Normal N1 = m_pNormalArray[curTri.n1];
+			G308_UVcoord UV1 = m_pUVArray[curTri.t1];
+
+			G308_Point P2 = m_pVertexArray[curTri.v2];
+			G308_Normal N2 = m_pNormalArray[curTri.n2];
+			G308_UVcoord UV2 = m_pUVArray[curTri.t2];
+
+			G308_Point P3 = m_pVertexArray[curTri.v3];
+			G308_Normal N3 = m_pNormalArray[curTri.n3];
+			G308_UVcoord UV3 = m_pUVArray[curTri.t3];
+
+			glShadeModel(GL_SMOOTH);
+			glColor3d(1.0f, 0.0f, 1.0f);
+
+			glBegin(GL_TRIANGLES);
+			glNormal3f(N1.x, N1.y, N1.z);
+			glTexCoord2f(UV1.u, UV1.v);
+			glVertex3f(P1.x, P1.y, P1.z);
+
+			glNormal3f(N2.x, N2.y, N2.z);
+			glTexCoord2f(UV2.u, UV2.v);
+			glVertex3f(P2.x, P2.y, P2.z);
+
+			glNormal3f(N3.x, N3.y, N3.z);
+			glTexCoord2f(UV3.u, UV3.v);
+			glVertex3f(P3.x, P3.y, P3.z);
+
+			glEnd();
 	}
-
 }
