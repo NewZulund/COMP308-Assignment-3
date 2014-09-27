@@ -40,11 +40,6 @@
  * OpenGL(R) is a registered trademark of Silicon Graphics, Inc.
  */
 
-/*
- * This is a modified version of "checker.c" from the OpenGL Redbook.
- *
- * It simply loads a texture (given via the command line) and displays it on two quads.
- */
 #include <GL/glut.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -73,52 +68,6 @@ void loadObjects();
 void drawObjects();
 void setCamera();
 void setLight();
-
-void init(char* filename) {
-	glClearColor(0.0, 0.0, 0.0, 0.0);
-	glShadeModel(GL_SMOOTH);
-	glEnable(GL_DEPTH_TEST);
-
-	unsigned int i;
-	for (i = 0; i < strlen(filename); i++) {
-		if (filename[i] == '.') {
-			break;
-		}
-	}
-	char extension[5];
-	strcpy(extension, &filename[i + 1]);
-	//printf(extension);
-	if (strcmp(extension, "jpg") == 0 || strcmp(extension, "jpeg") == 0)
-		loadTextureFromJPEG(filename, &t);
-	else if (strcmp(extension, "png") == 0)
-		//Do nothing
-		1+1;
-	else {
-		printf("Invalid format. Only supports JPEG and PNG.\n");
-		exit(1);
-	}
-
-	//Init the texture storage, and set some parameters.
-	//(I high recommend reading up on these commands)
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glGenTextures(1, &texName);
-	glBindTexture(GL_TEXTURE_2D, texName);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	//Only useful for PNG files, since JPEG doesn't support alpha
-	if (t.hasAlpha) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, t.width, t.height, 0, GL_RGBA,
-				GL_UNSIGNED_BYTE, t.textureData);
-	} else {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t.width, t.height, 0, GL_RGB,
-				GL_UNSIGNED_BYTE, t.textureData);
-	}
-	//Once the texture has been loaded by GL, we don't need this anymore.
-	free(t.textureData);
-}
 
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -155,16 +104,16 @@ void keyboard(unsigned char key, int x, int y) {
 		exit(0);
 		break;
 	case 'd':
-		yRot+= 5;
+		yRot += 5;
 		break;
 	case 'a':
-		yRot-= 5;
+		yRot -= 5;
 		break;
 	case 'w':
-		xRot-= 5;
+		xRot -= 5;
 		break;
 	case 's':
-		xRot+= 5;
+		xRot += 5;
 		break;
 	default:
 		break;
@@ -174,17 +123,13 @@ void keyboard(unsigned char key, int x, int y) {
 
 int main(int argc, char** argv) {
 	glutInit(&argc, argv);
-	if (argc != 2) {
-		//printf("Usage: TextureDemo [texturefile]\n");
-		//exit(1);
-	}
+
 	//Note the addition of GLUT_ALPHA to the display mode flags
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_ALPHA | GLUT_DEPTH);
 	glutInitWindowSize(G308_WIN_WIDTH, G308_WIN_HEIGHT);
 	glutInitWindowPosition(100, 100);
 	glutCreateWindow(argv[0]);
 
-	init(argv[1]);
 	loadObjects();
 
 	glutDisplayFunc(display);
@@ -194,9 +139,9 @@ int main(int argc, char** argv) {
 	glutMainLoop();
 	return 0;
 }
-void drawObjects(){
+void drawObjects() {
 	glPushMatrix();
-	glColor3f(0,0,0);
+	glColor3f(0, 0, 0);
 	//glTranslatef(0,0,-10);
 
 	glEnable(GL_DEPTH_TEST);
@@ -204,69 +149,62 @@ void drawObjects(){
 	glEnable(GL_BLEND);
 	glEnable(GL_COLOR_MATERIAL);
 
+	glPushMatrix();
+	glScalef(0.2f, 0.2f, 0.2f);
+	glTranslatef(0, 0, 0);
+	glColor3f(1, 1, 1);
+	table->RenderGeometry();
+	glPopMatrix();
 
+	glPushMatrix();
+	glScalef(0.2f, 0.2f, 0.2f);
+	glTranslatef(0, 0, 0);
+	glColor3f(1, 1, 0.8f);
+	bunny->RenderGeometry();
+	glPopMatrix();
 
-		glPushMatrix();
-		glScalef(0.2f,0.2f,0.2f);
-		glTranslatef(0,0,0);
-		glColor3f(1,1,1);
-		table->RenderGeometry();
-		glPopMatrix();
+	glPushMatrix();
+	glScalef(0.2f, 0.2f, 0.2f);
+	glTranslatef(-4, 2, 4);
+	glColor3f(1, 1, 0);
+	sphere->RenderGeometry();
+	glPopMatrix();
 
-		glPushMatrix();
-		glScalef(0.2f,0.2f,0.2f);
-		glTranslatef(0,0,0);
-		glColor3f(1,1,0.8f);
-		bunny->RenderGeometry();
-		glPopMatrix();
+	glPushMatrix();
+	glScalef(0.2f, 0.2f, 0.2f);
+	glTranslatef(-4, 0, -4);
+	glColor3f(0, 0, 1);
+	teapot->RenderGeometry();
+	glPopMatrix();
 
-		glPushMatrix();
-		glScalef(0.2f,0.2f,0.2f);
-		glTranslatef(-4,2,4);
-		glColor3f(1,1,0);
-		sphere->RenderGeometry();
-		glPopMatrix();
+	glPushMatrix();
+	glScalef(0.2f, 0.2f, 0.2f);
+	glTranslatef(4.0f, 1.0f, 4.0f);
+	glColor3f(1, 0, 0);
+	torus->RenderGeometry();
+	glPopMatrix();
 
-		glPushMatrix();
-		glScalef(0.2f,0.2f,0.2f);
-		glTranslatef(-4,0,-4);
-		glColor3f(0,0,1);
-		teapot->RenderGeometry();
-		glPopMatrix();
-
-		glPushMatrix();
-		glScalef(0.2f,0.2f,0.2f);
-		glTranslatef(4.0f,1.0f,4.0f);
-		glColor3f(1,0,0);
-		torus->RenderGeometry();
-		glPopMatrix();
-
-		glPushMatrix();
-		glScalef(0.2f,0.2f,0.2f);
-		glTranslatef(4.0f,2.0f,-4.0f);
-		glColor3f(1,1,1);
-		box->RenderGeometry();
-		glPopMatrix();
+	glPushMatrix();
+	glScalef(0.2f, 0.2f, 0.2f);
+	glTranslatef(4.0f, 2.0f, -4.0f);
+	glColor3f(1, 1, 1);
+	box->RenderGeometry();
+	glPopMatrix();
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glDisable(GL_COLOR_MATERIAL);
 	glPopMatrix();
-
-
-
 }
 
-void loadObjects(){
-	printf("Reached Creating objects \n");
-	table = new G308_Geometry();
-	bunny = new G308_Geometry();
-	sphere = new G308_Geometry();
-	teapot = new G308_Geometry();
-	torus = new G308_Geometry();
-	box = new G308_Geometry();
+void loadObjects() {
+	table = new G308_Geometry("table");
+	bunny = new G308_Geometry("bunny");
+	sphere = new G308_Geometry("sphere");
+	teapot = new G308_Geometry("teapot");
+	torus = new G308_Geometry("torus");
+	box = new G308_Geometry("box");
 
-	printf("Reached loading objects \n");
 	table->ReadOBJ("Table.obj");
 	table->ReadTexture("wood.jpg");
 	table->CreateGLPolyGeometry();
@@ -277,7 +215,6 @@ void loadObjects(){
 	sphere->ReadOBJ("Sphere.obj");
 	sphere->CreateGLPolyGeometry();
 
-	glColor3f(0.5f,0.5f,1);
 	teapot->ReadOBJ("Teapot.obj");
 	teapot->CreateGLPolyGeometry();
 
@@ -288,18 +225,20 @@ void loadObjects(){
 	box->ReadTexture("brick.jpg");
 	box->CreateGLPolyGeometry();
 }
-void setCamera(){
+void setCamera() {
 	glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		gluPerspective(G308_FOVY, (double) G308_WIN_WIDTH / (double) G308_WIN_HEIGHT, G308_ZNEAR_3D, G308_ZFAR_3D);
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+	glLoadIdentity();
+	gluPerspective(G308_FOVY,
+			(double) G308_WIN_WIDTH / (double) G308_WIN_HEIGHT, G308_ZNEAR_3D,
+			G308_ZFAR_3D);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 
-		gluLookAt(0.0, 3.0, 10.0 + zoom, 0, 0, 0, 0.0, 1.0, 0.0);
+	gluLookAt(0.0, 3.0, 10.0 + zoom, 0, 0, 0, 0.0, 1.0, 0.0);
 
-		glRotatef(xRot,1,0,0);
-		glRotatef(yRot,0,1,0);
-		glRotatef(zRot,0,0,1);
+	glRotatef(xRot, 1, 0, 0);
+	glRotatef(yRot, 0, 1, 0);
+	glRotatef(zRot, 0, 0, 1);
 }
 
 // Set Light
@@ -309,8 +248,8 @@ void setLight() {
 	float spotposition[] = { 0.0f, 5.0f, 0.1f, 1.0f };
 	float spotdiffintensity[] = { 0.10f, 0.10f, 0.10f, 1.0f };
 	float spotambient[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	float spotspecular[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-	const float expo = 10.0f;
+	float spotspecular[] = { 0.05f, 0.05f, 0.05f, 1.0f };
+	const float expo = 2.0f;
 
 	glLightfv(GL_LIGHT0, GL_POSITION, spotposition);
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, spotdirection);
@@ -318,33 +257,34 @@ void setLight() {
 	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 7.0f);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, spotdiffintensity);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, spotambient);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, spotambient);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, spotspecular);
 	glEnable(GL_LIGHT0);
 	//glutSolidSphere(1,10,10);
 
 	//Point light
 	glPushMatrix();
-	glTranslatef(-1,3,2);
-	float pointdirection[] = { 0.0f, -1.0f, 0.0f, 1.0f };
-	float pointdiffintensity[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	glTranslatef(-1, 3, 2);
+	float pointdiffintensity[] = { 0.12f, 0.12f, 0.12f, 1.0f };
 	float pointambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	float pointspecular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	glLightfv(GL_LIGHT1, GL_POSITION, pointdirection);
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, pointdiffintensity);
 	glLightfv(GL_LIGHT1, GL_AMBIENT, pointambient);
-	glLightfv(GL_LIGHT1, GL_SPECULAR, pointspecular);
+
+	glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 0.0);
+	glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 1.0);
+	glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.5);
 	glEnable(GL_LIGHT1);
 	glPopMatrix();
 
 	//Ambient light
 	glPushMatrix();
-	glTranslatef(-1,10,2);
+	glTranslatef(-1, 10, 2);
 	float ambient[] = { 0.1f, 0.1f, 0.0f, 1.0f };
 	glLightfv(GL_LIGHT2, GL_AMBIENT, ambient);
 	glEnable(GL_LIGHT2);
 	glPopMatrix();
-
 
 }
 

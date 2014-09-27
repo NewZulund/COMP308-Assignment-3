@@ -46,10 +46,10 @@ private:
 	GLuint texName;
 	TextureInfo t;
 
-	char * fn;
+	char fn[50];
 
 public:
-	G308_Geometry(void);
+	G308_Geometry(char name[]);
 	~G308_Geometry(void);
 
 	void ReadOBJ(const char* filename);

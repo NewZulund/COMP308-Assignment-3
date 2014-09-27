@@ -21,7 +21,7 @@
 
 int material;
 
-G308_Geometry::G308_Geometry(void) {
+G308_Geometry::G308_Geometry(char name[]) {
 	m_pVertexArray = NULL;
 	m_pNormalArray = NULL;
 	m_pUVArray = NULL;
@@ -31,6 +31,7 @@ G308_Geometry::G308_Geometry(void) {
 
 	material = 0;
 	texName = NULL;
+	strcpy(fn, name);
 
 	m_nNumPoint = m_nNumUV = m_nNumPolygon = 0;
 	m_glGeomListPoly = m_glGeomListWire = 0;
@@ -54,8 +55,6 @@ G308_Geometry::~G308_Geometry(void) {
 void G308_Geometry::ReadOBJ(const char *filename) {
 	char file[50];
 	strncpy(file, filename, 51);
-	fn = file;
-	//strncpy(fn, filename, 51);
 
 	FILE* fp;
 	char mode, vmode;
@@ -95,12 +94,6 @@ void G308_Geometry::ReadOBJ(const char *filename) {
 	m_nNumUV = numUV;
 	m_nNumPolygon = numFace;
 	m_nNumNormal = numNorm;
-
-	printf("Number of Point %d, UV %d, Normal %d, Face %d\n", numVert, numUV,
-			numNorm, numFace);
-	//-------------------------------------------------------------
-	//	Allocate memory for array
-	//-------------------------------------------------------------
 
 	if (m_pVertexArray != NULL)
 		delete[] m_pVertexArray;
@@ -192,7 +185,6 @@ void G308_Geometry::ReadOBJ(const char *filename) {
 	}
 
 	fclose(fp);
-	printf("Reading OBJ file is DONE.\n");
 
 }
 
@@ -204,7 +196,6 @@ void G308_Geometry::ReadTexture(const char* filename) {
 	char file[50];
 	strncpy(file, filename, 51);
 
-
 	unsigned int i;
 	for (i = 0; i < strlen(filename); i++) {
 		if (filename[i] == '.') {
@@ -212,10 +203,8 @@ void G308_Geometry::ReadTexture(const char* filename) {
 		}
 	}
 
-
 	char extension[5];
 	strcpy(extension, &filename[i + 1]);
-	//printf(extension);
 	if (strcmp(extension, "jpg") == 0 || strcmp(extension, "jpeg") == 0)
 		loadTextureFromJPEG(file, &t);
 	else if (strcmp(extension, "png") == 0)
@@ -255,70 +244,61 @@ void G308_Geometry::ReadTexture(const char* filename) {
 // of the obj file to show it as polygon, using texture and normal information (if any)
 //--------------------------------------------------------------
 void G308_Geometry::CreateGLPolyGeometry() {
+
 	if (m_glGeomListPoly != 0)
 		glDeleteLists(m_glGeomListPoly, 1);
 
 	// Assign a display list; return 0 if err
 	m_glGeomListPoly = glGenLists(1);
 	glNewList(m_glGeomListPoly, GL_COMPILE);
+	if (t.hasAlpha) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_ALPHA);
+	}
+	glEnable(GL_TEXTURE_2D);
 
-	//Your code here
-
-	//if (texName != NULL) {
-		printf("texname = %d \n", texName);
-			//glColor3f(1, 1, 1);
-			if (t.hasAlpha) {
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-				glEnable(GL_ALPHA);
-			}
-			glEnable(GL_TEXTURE_2D);
-			//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_INTERPOLATE);
-
-			glBindTexture(GL_TEXTURE_2D, texName);
-		//}
+	glBindTexture(GL_TEXTURE_2D, texName);
 
 	int count = 0;
 	int uvModU = 5;
 	int uvModV = 5;
 
-		//int count = m_nNumPolygon;
-		for (; count < m_nNumPolygon; count++) {
-			G308_Triangle curTri = m_pTriangles[count];
+	//int count = m_nNumPolygon;
+	for (; count < m_nNumPolygon; count++) {
+		G308_Triangle curTri = m_pTriangles[count];
 
-			G308_Point P1 = m_pVertexArray[curTri.v1];
-			G308_Normal N1 = m_pNormalArray[curTri.n1];
-			G308_UVcoord UV1 = m_pUVArray[curTri.t1];
+		G308_Point P1 = m_pVertexArray[curTri.v1];
+		G308_Normal N1 = m_pNormalArray[curTri.n1];
+		G308_UVcoord UV1 = m_pUVArray[curTri.t1];
 
-			G308_Point P2 = m_pVertexArray[curTri.v2];
-			G308_Normal N2 = m_pNormalArray[curTri.n2];
-			G308_UVcoord UV2 = m_pUVArray[curTri.t2];
+		G308_Point P2 = m_pVertexArray[curTri.v2];
+		G308_Normal N2 = m_pNormalArray[curTri.n2];
+		G308_UVcoord UV2 = m_pUVArray[curTri.t2];
 
-			G308_Point P3 = m_pVertexArray[curTri.v3];
-			G308_Normal N3 = m_pNormalArray[curTri.n3];
-			G308_UVcoord UV3 = m_pUVArray[curTri.t3];
+		G308_Point P3 = m_pVertexArray[curTri.v3];
+		G308_Normal N3 = m_pNormalArray[curTri.n3];
+		G308_UVcoord UV3 = m_pUVArray[curTri.t3];
 
-			glShadeModel(GL_SMOOTH);
-			//glColor3d(1.0f, 0.0f, 1.0f);
+		glShadeModel(GL_SMOOTH);
 
-			glBegin(GL_TRIANGLES);
-			glNormal3f(N1.x, N1.y, N1.z);
-			glTexCoord2f(UV1.u * uvModU, UV1.v * uvModV);
-			glVertex3f(P1.x, P1.y, P1.z);
+		glBegin(GL_TRIANGLES);
+		glNormal3f(N1.x, N1.y, N1.z);
+		glTexCoord2f(UV1.u * uvModU, UV1.v * uvModV);
+		glVertex3f(P1.x, P1.y, P1.z);
 
-			glNormal3f(N2.x, N2.y, N2.z);
-			glTexCoord2f(UV2.u * uvModU, UV2.v * uvModV);
-			glVertex3f(P2.x, P2.y, P2.z);
+		glNormal3f(N2.x, N2.y, N2.z);
+		glTexCoord2f(UV2.u * uvModU, UV2.v * uvModV);
+		glVertex3f(P2.x, P2.y, P2.z);
 
-			glNormal3f(N3.x, N3.y, N3.z);
-			glTexCoord2f(UV3.u * uvModU, UV3.v * uvModV);
-			glVertex3f(P3.x, P3.y, P3.z);
+		glNormal3f(N3.x, N3.y, N3.z);
+		glTexCoord2f(UV3.u * uvModU, UV3.v * uvModV);
+		glVertex3f(P3.x, P3.y, P3.z);
 
-			glEnd();
-		}
-		glDisable(GL_TEXTURE_2D);
+		glEnd();
+	}
+	glDisable(GL_TEXTURE_2D);
 	glEndList();
-
 
 }
 
@@ -330,5 +310,25 @@ void G308_Geometry::toggleMode() {
 }
 
 void G308_Geometry::RenderGeometry() {
+	if (fn[0] == 'b') {	//bunny
+		GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+		GLfloat mat_shininess[] = { 50.0 };
+		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+	}
+	if (fn[2] == 'r') {	//torus
+		printf("drawing trooorrruussss \n");
+		GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+		GLfloat mat_shininess[] = { 56.0 };
+		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+	}
+	if (fn[1] == 'p') {	//sphere
+		printf("drawing trooorrruussss \n");
+		GLfloat mat_specular[] = { 0.05, 0.05, 0.05, 1.0 };
+		GLfloat mat_shininess[] = { 56.0 };
+		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+	}
 	glCallList(m_glGeomListPoly);
 }
