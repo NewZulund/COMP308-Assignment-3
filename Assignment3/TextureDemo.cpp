@@ -43,13 +43,11 @@
 #include <GL/glut.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include "G308_ImageLoader.h"
 #include "G308_Geometry.h"
 #include "string.h"
 #include "define.h"
-
-static GLuint texName;
-static TextureInfo t;
 
 G308_Geometry * table;
 G308_Geometry * sphere;
@@ -59,21 +57,33 @@ G308_Geometry * teapot;
 G308_Geometry * bunny;
 G308_Geometry * box;
 
+int lockLights = FALSE;
+
 float zoom = 1;
 float xRot = 0;
 float yRot = 0;
 float zRot = 0;
 
+float spotXRot = 0;
+float spotYRot = 0;
+float spotZRot = 0;
+float spotCutOff  = 7.0f;
+
 void loadObjects();
 void drawObjects();
 void setCamera();
 void setLight();
+void drawText(char * string, float x, float y);
+void keyboardSpecialCall(int key, int x, int y);
+void drawSpotlight(float * spotDirection, float cutoff);
+void draw2D();
 
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//If we're using alpha, we need to do this
 
 	setCamera();
+	draw2D();
 
 	glPushMatrix();
 	setLight();
@@ -104,16 +114,25 @@ void keyboard(unsigned char key, int x, int y) {
 		exit(0);
 		break;
 	case 'd':
-		yRot += 5;
+		spotYRot += 5;
 		break;
 	case 'a':
-		yRot -= 5;
+		spotYRot -= 5;
 		break;
 	case 'w':
-		xRot -= 5;
+		spotXRot -= 5;
 		break;
 	case 's':
-		xRot += 5;
+		spotXRot += 5;
+		break;
+	case 'q':
+		spotCutOff -= 1;
+		break;
+	case 'e':
+		spotCutOff += 1;
+		break;
+	case 'l':
+		lockLights == TRUE ? lockLights = FALSE : lockLights = TRUE;
 		break;
 	default:
 		break;
@@ -135,6 +154,8 @@ int main(int argc, char** argv) {
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
+	glutSpecialFunc(keyboardSpecialCall);
+
 	display();
 	glutMainLoop();
 	return 0;
@@ -142,7 +163,6 @@ int main(int argc, char** argv) {
 void drawObjects() {
 	glPushMatrix();
 	glColor3f(0, 0, 0);
-	//glTranslatef(0,0,-10);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
@@ -236,16 +256,30 @@ void setCamera() {
 
 	gluLookAt(0.0, 3.0, 10.0 + zoom, 0, 0, 0, 0.0, 1.0, 0.0);
 
-	glRotatef(xRot, 1, 0, 0);
+	glRotatef(zRot, 1, 0, 0);
 	glRotatef(yRot, 0, 1, 0);
-	glRotatef(zRot, 0, 0, 1);
+	glRotatef(xRot, 0, 0, 1);
 }
 
 // Set Light
 void setLight() {
+	glPushMatrix();
+
+	if(lockLights == TRUE){
+		glLoadIdentity();
+	}
+
 	//Spotlight
+	glPushMatrix();
+	glRotatef(spotYRot, 0, 1, 0);
+	glRotatef(spotZRot, 0, 0, 1);
+	glRotatef(spotXRot, 1, 0, 0);
+
+	glTranslatef(0.0,5.0,0.1);
+
 	float spotdirection[] = { 0.0f, -1.0f, 0.0f, 0.0f };
-	float spotposition[] = { 0.0f, 5.0f, 0.1f, 1.0f };
+	//float spotposition[] = { 0.0f, 5.0f, 0.1f, 1.0f };
+	float spotposition[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	float spotdiffintensity[] = { 0.10f, 0.10f, 0.10f, 1.0f };
 	float spotambient[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	float spotspecular[] = { 0.05f, 0.05f, 0.05f, 1.0f };
@@ -254,13 +288,16 @@ void setLight() {
 	glLightfv(GL_LIGHT0, GL_POSITION, spotposition);
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, spotdirection);
 	glLightfv(GL_LIGHT0, GL_SPOT_EXPONENT, &expo);
-	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 7.0f);
+	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, spotCutOff);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, spotdiffintensity);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, spotambient);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, spotambient);
+	//glLightfv(GL_LIGHT0, GL_SPECULAR, spotambient);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, spotspecular);
 	glEnable(GL_LIGHT0);
-	//glutSolidSphere(1,10,10);
+
+	drawSpotlight(spotdirection, spotCutOff);
+
+	glPopMatrix();
 
 	//Point light
 	glPushMatrix();
@@ -286,5 +323,111 @@ void setLight() {
 	glEnable(GL_LIGHT2);
 	glPopMatrix();
 
+	glPopMatrix();
+
 }
+
+void drawSpotlight(float * spotDirection, float cutoff){
+	glColor3f(1,0,0);
+	glutSolidSphere(0.15f, 10,10);
+	glPushMatrix();
+
+	GLUquadricObj *quadratic;
+	quadratic = gluNewQuadric();
+
+	//Calculate end Width from cutoff
+	float length = 1;
+
+	cutoff = cutoff * M_PI / 180; //Convert to degrees
+	float diameter = tan(cutoff) * length;
+
+	glRotatef(90, 1,0,0);
+	gluCylinder(quadratic, 0.01f, diameter, length, 32, 32);
+	glPopMatrix();
+
+}
+
+void draw2D() {
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+
+	gluOrtho2D(0, G308_WIN_WIDTH, 0, G308_WIN_HEIGHT);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_LIGHTING);
+
+	//Transparency
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glPushMatrix();
+	//drawPoints();
+	glPopMatrix();
+
+	//Text Over UI
+	drawText("WASD : Spotlight Controls", -0.8f, 0.9f);
+	drawText("ARROW KEYS : Camera Controls", -0.8f, 0.85f);
+	drawText("Press , or . to zoom in and out", -0.8f, 0.75f);
+	drawText("Mouse menu for animation control. ", -0.8f, 0.7f);
+
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+}
+
+void drawText(char * words, float x, float y) {
+
+	glPushMatrix();
+	glLoadIdentity();
+
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	glDisable(GL_LIGHTING);
+	glDisable( GL_DEPTH_TEST);
+	glRasterPos2f(x, y);
+
+	char buf[300];
+	sprintf(buf, words);
+
+	char c = words[0];
+	int i = 0;
+	while (c != '\0') {
+
+		glutBitmapCharacter(GLUT_BITMAP_8_BY_13, c);
+		i++;
+		c = words[i];
+	}
+
+	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_LIGHTING);
+	glEnable( GL_DEPTH_TEST);
+	glPopMatrix();
+}
+
+void keyboardSpecialCall(int key, int x, int y) {
+
+	int rotation = 5;
+	if(key == GLUT_KEY_UP){
+		zRot = zRot + rotation;
+	}
+	if(key == GLUT_KEY_DOWN){
+			zRot = zRot - rotation;
+		}
+	if(key == GLUT_KEY_LEFT){
+		yRot = yRot + rotation;
+	}
+	if(key == GLUT_KEY_RIGHT){
+		yRot = yRot - rotation;
+	}
+
+	glutPostRedisplay();
+}
+
 

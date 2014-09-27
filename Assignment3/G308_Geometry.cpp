@@ -317,14 +317,12 @@ void G308_Geometry::RenderGeometry() {
 		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 	}
 	if (fn[2] == 'r') {	//torus
-		printf("drawing trooorrruussss \n");
 		GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
 		GLfloat mat_shininess[] = { 56.0 };
 		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 	}
 	if (fn[1] == 'p') {	//sphere
-		printf("drawing trooorrruussss \n");
 		GLfloat mat_specular[] = { 0.05, 0.05, 0.05, 1.0 };
 		GLfloat mat_shininess[] = { 56.0 };
 		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
