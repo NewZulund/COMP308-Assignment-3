@@ -30,6 +30,7 @@ G308_Geometry::G308_Geometry(void) {
 	mode = G308_SHADE_POLYGON;
 
 	material = 0;
+	texName = NULL;
 
 	m_nNumPoint = m_nNumUV = m_nNumPolygon = 0;
 	m_glGeomListPoly = m_glGeomListWire = 0;
@@ -44,13 +45,18 @@ G308_Geometry::~G308_Geometry(void) {
 		delete[] m_pUVArray;
 	if (m_pTriangles != NULL)
 		delete[] m_pTriangles;
-	free(texture);
+	free(&t);
 }
 
 //-------------------------------------------------------
 // Read in the OBJ (Note: fails quietly, so take care)
 //--------------------------------------------------------
 void G308_Geometry::ReadOBJ(const char *filename) {
+	char file[50];
+	strncpy(file, filename, 51);
+	fn = file;
+	//strncpy(fn, filename, 51);
+
 	FILE* fp;
 	char mode, vmode;
 	char str[200];
@@ -146,12 +152,15 @@ void G308_Geometry::ReadOBJ(const char *filename) {
 			break;
 		case 'f': /* faces : stored value is index - 1 since our index starts from 0, but obj starts from 1 */
 			if (numNorm > 0 && numUV > 0) {
-				sscanf(str, "f %d/%d/%d %d/%d/%d %d/%d/%d", &v1, &t1, &n1, &v2, &t2, &n2, &v3, &t3, &n3);
-			} else if(numNorm > 0 && numUV ==0){
-				sscanf(str, "f %d//%d %d//%d %d//%d", &v1, &n1, &v2, &n2, &v3, &n3);
-			} else if(numUV > 0 && numNorm==0){
-				sscanf(str, "f %d/%d %d/%d %d/%d", &v1, &t1, &v2, &t2, &v3, &t3);
-			} else if(numUV==0 && numNorm==0){
+				sscanf(str, "f %d/%d/%d %d/%d/%d %d/%d/%d", &v1, &t1, &n1, &v2,
+						&t2, &n2, &v3, &t3, &n3);
+			} else if (numNorm > 0 && numUV == 0) {
+				sscanf(str, "f %d//%d %d//%d %d//%d", &v1, &n1, &v2, &n2, &v3,
+						&n3);
+			} else if (numUV > 0 && numNorm == 0) {
+				sscanf(str, "f %d/%d %d/%d %d/%d", &v1, &t1, &v2, &t2, &v3,
+						&t3);
+			} else if (numUV == 0 && numNorm == 0) {
 				sscanf(str, "f %d %d %d", &v1, &v2, &v3);
 			}
 			// Vertex indicies for triangle:
@@ -193,9 +202,51 @@ void G308_Geometry::ReadOBJ(const char *filename) {
 //--------------------------------------------------------------
 void G308_Geometry::ReadTexture(const char* filename) {
 	char file[50];
-	strncpy(file,filename,51);
-	TextureInfo i;
-	material = loadTextureFromJPEG(file, &i);
+	strncpy(file, filename, 51);
+
+
+	unsigned int i;
+	for (i = 0; i < strlen(filename); i++) {
+		if (filename[i] == '.') {
+			break;
+		}
+	}
+
+
+	char extension[5];
+	strcpy(extension, &filename[i + 1]);
+	//printf(extension);
+	if (strcmp(extension, "jpg") == 0 || strcmp(extension, "jpeg") == 0)
+		loadTextureFromJPEG(file, &t);
+	else if (strcmp(extension, "png") == 0)
+		//Do nothing
+		1 + 1;
+	else {
+		printf("Invalid format. Only supports JPEG and PNG.\n");
+		exit(1);
+	}
+
+	//Init the texture storage, and set some parameters.
+	//(I high recommend reading up on these commands)
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glGenTextures(1, &texName);
+	glBindTexture(GL_TEXTURE_2D, texName);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	//Only useful for PNG files, since JPEG doesn't support alpha
+	if (t.hasAlpha) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, t.width, t.height, 0, GL_RGBA,
+		GL_UNSIGNED_BYTE, t.textureData);
+	} else {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t.width, t.height, 0, GL_RGB,
+		GL_UNSIGNED_BYTE, t.textureData);
+	}
+	//Once the texture has been loaded by GL, we don't need this anymore.
+	free(t.textureData);
+
 }
 
 //--------------------------------------------------------------
@@ -213,75 +264,26 @@ void G308_Geometry::CreateGLPolyGeometry() {
 
 	//Your code here
 
-	float lPos[] = { 1.0, 1.0, 1.0, 1.0 };
-	glLightfv(GL_LIGHT0, GL_POSITION, lPos);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
+	//if (texName != NULL) {
+		printf("texname = %d \n", texName);
+			//glColor3f(1, 1, 1);
+			if (t.hasAlpha) {
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				glEnable(GL_ALPHA);
+			}
+			glEnable(GL_TEXTURE_2D);
+			//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_INTERPOLATE);
 
-	float direction[] = { 0.0f, 1.0f, 0.0f, 0.0f };
-	float diffintensity[] = { 0.0f, 0.7f, 0.7f, 1.0f };
-	float ambient[] = { 0.1f, 0.1f, 0.1f, 1.0f };
-	float diffuse[] = { 0.85f, 0.58f, 0.35f, 1.0f };
-	float specular[] = { 0.1f, 0.05f, 0.05f, 1.0f };
-	float shininess = 15.0f;
-	glLightfv(GL_LIGHT0, GL_POSITION, direction);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffintensity);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
+			glBindTexture(GL_TEXTURE_2D, texName);
+		//}
 
 	int count = 0;
-	for (; count < m_nNumPolygon; count++) {
-		G308_Triangle curTri = m_pTriangles[count];
+	int uvModU = 5;
+	int uvModV = 5;
 
-		G308_Point P1 = m_pVertexArray[curTri.v1];
-		G308_Normal N1 = m_pNormalArray[curTri.n1];
-		G308_UVcoord UV1 = m_pUVArray[curTri.t1];
-
-		G308_Point P2 = m_pVertexArray[curTri.v2];
-		G308_Normal N2 = m_pNormalArray[curTri.n2];
-		G308_UVcoord UV2 = m_pUVArray[curTri.t2];
-
-		G308_Point P3 = m_pVertexArray[curTri.v3];
-		G308_Normal N3 = m_pNormalArray[curTri.n3];
-		G308_UVcoord UV3 = m_pUVArray[curTri.t3];
-
-		glShadeModel(GL_SMOOTH);
-		//glColor3d(1.0f, 0.0f, 1.0f);
-
-		glBegin(GL_TRIANGLES);
-		glNormal3f(N1.x, N1.y, N1.z);
-		glTexCoord2f(UV1.u, UV1.v);
-		glVertex3f(P1.x, P1.y, P1.z);
-
-		glNormal3f(N2.x, N2.y, N2.z);
-		glTexCoord2f(UV2.u, UV2.v);
-		glVertex3f(P2.x, P2.y, P2.z);
-
-		glNormal3f(N3.x, N3.y, N3.z);
-		glTexCoord2f(UV3.u, UV3.v);
-		glVertex3f(P3.x, P3.y, P3.z);
-
-		glEnd();
-	}
-	glEndList();
-}
-
-void G308_Geometry::CreateGLWireGeometry() {
-
-}
-void G308_Geometry::toggleMode() {
-
-}
-
-void G308_Geometry::RenderGeometry() {
-	printf("Rendering something \n");
-	glCallList(m_glGeomListPoly);
-
-	int count = 0;
-	for (; count < m_nNumPolygon; count++) {
+		//int count = m_nNumPolygon;
+		for (; count < m_nNumPolygon; count++) {
 			G308_Triangle curTri = m_pTriangles[count];
 
 			G308_Point P1 = m_pVertexArray[curTri.v1];
@@ -301,17 +303,32 @@ void G308_Geometry::RenderGeometry() {
 
 			glBegin(GL_TRIANGLES);
 			glNormal3f(N1.x, N1.y, N1.z);
-			glTexCoord2f(UV1.u, UV1.v);
+			glTexCoord2f(UV1.u * uvModU, UV1.v * uvModV);
 			glVertex3f(P1.x, P1.y, P1.z);
 
 			glNormal3f(N2.x, N2.y, N2.z);
-			glTexCoord2f(UV2.u, UV2.v);
+			glTexCoord2f(UV2.u * uvModU, UV2.v * uvModV);
 			glVertex3f(P2.x, P2.y, P2.z);
 
 			glNormal3f(N3.x, N3.y, N3.z);
-			glTexCoord2f(UV3.u, UV3.v);
+			glTexCoord2f(UV3.u * uvModU, UV3.v * uvModV);
 			glVertex3f(P3.x, P3.y, P3.z);
 
 			glEnd();
-	}
+		}
+		glDisable(GL_TEXTURE_2D);
+	glEndList();
+
+
+}
+
+void G308_Geometry::CreateGLWireGeometry() {
+
+}
+void G308_Geometry::toggleMode() {
+
+}
+
+void G308_Geometry::RenderGeometry() {
+	glCallList(m_glGeomListPoly);
 }

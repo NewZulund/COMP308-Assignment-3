@@ -4,9 +4,9 @@
 //
 // Edited by Daniel Atkins
 //
-// This software is provided 'as-is' for assignment of COMP308 
-// in ECS, Victoria University of Wellington, 
-// without any express or implied warranty. 
+// This software is provided 'as-is' for assignment of COMP308
+// in ECS, Victoria University of Wellington,
+// without any express or implied warranty.
 // In no event will the authors be held liable for any
 // damages arising from the use of this software.
 //
@@ -19,6 +19,8 @@
 
 #include "define.h"
 #include <GL/glut.h>
+#include "G308_Geometry.h"
+#include "G308_ImageLoader.h"
 
 class G308_Geometry
 {
@@ -41,7 +43,10 @@ private:
 	int m_glGeomListPoly;	// Display List for Polygon
 	int m_glGeomListWire;	// Display List for Wireframe
 
-	GLuint *texture;
+	GLuint texName;
+	TextureInfo t;
+
+	char * fn;
 
 public:
 	G308_Geometry(void);

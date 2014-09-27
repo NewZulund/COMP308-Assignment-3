@@ -127,47 +127,7 @@ void display(void) {
 	setCamera();
 
 	glPushMatrix();
-	//glRotatef(45.0f,0.0f,0.0f,0.0f);
 	setLight();
-
-	glColor3f(0,0,0);
-	if (t.hasAlpha) {
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_ALPHA);
-	}
-	glEnable(GL_TEXTURE_2D);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glBindTexture(GL_TEXTURE_2D, texName);
-
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.0, 0.0);
-	glVertex3f(-2.0, -1.0, 0.0);
-	glTexCoord2f(0.0, 1.0);
-	glVertex3f(-2.0, 1.0, 0.0);
-	glTexCoord2f(1.0, 1.0);
-	glVertex3f(0.0, 1.0, 0.0);
-	glTexCoord2f(1.0, 0.0);
-	glVertex3f(0.0, -1.0, 0.0);
-
-	glTexCoord2f(0.0, 0.0);
-	glVertex3f(1.0, -1.0, 0.0);
-	glTexCoord2f(0.0, 1.0);
-	glVertex3f(1.0, 1.0, 0.0);
-	glTexCoord2f(1.0, 1.0);
-	glVertex3f(2.41421, 1.0, -1.41421);
-	glTexCoord2f(1.0, 0.0);
-	glVertex3f(2.41421, -1.0, -1.41421);
-	glEnd();
-	glFlush();
-	if (t.hasAlpha) {
-		glDisable(GL_BLEND);
-		glDisable(GL_ALPHA);
-	}
-	glDisable(GL_TEXTURE_2D);
-
-
 
 	//3D
 	glMatrixMode(GL_MODELVIEW);
@@ -215,16 +175,18 @@ void keyboard(unsigned char key, int x, int y) {
 int main(int argc, char** argv) {
 	glutInit(&argc, argv);
 	if (argc != 2) {
-		printf("Usage: TextureDemo [texturefile]\n");
-		exit(1);
+		//printf("Usage: TextureDemo [texturefile]\n");
+		//exit(1);
 	}
 	//Note the addition of GLUT_ALPHA to the display mode flags
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_ALPHA | GLUT_DEPTH);
 	glutInitWindowSize(G308_WIN_WIDTH, G308_WIN_HEIGHT);
 	glutInitWindowPosition(100, 100);
 	glutCreateWindow(argv[0]);
+
 	init(argv[1]);
 	loadObjects();
+
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
@@ -234,17 +196,15 @@ int main(int argc, char** argv) {
 }
 void drawObjects(){
 	glPushMatrix();
-	glColor3f(1,1,1);
+	glColor3f(0,0,0);
 	//glTranslatef(0,0,-10);
-	printf("Drawing Objects \n");
-
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
+	glEnable(GL_BLEND);
 	glEnable(GL_COLOR_MATERIAL);
 
-	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-	glColor3f(1.0f,0.0f,0.0f); /* set object color as red */
+
 
 		glPushMatrix();
 		glScalef(0.2f,0.2f,0.2f);
@@ -256,7 +216,7 @@ void drawObjects(){
 		glPushMatrix();
 		glScalef(0.2f,0.2f,0.2f);
 		glTranslatef(0,0,0);
-		glColor3f(1,1,1);
+		glColor3f(1,1,0.8f);
 		bunny->RenderGeometry();
 		glPopMatrix();
 
@@ -270,7 +230,7 @@ void drawObjects(){
 		glPushMatrix();
 		glScalef(0.2f,0.2f,0.2f);
 		glTranslatef(-4,0,-4);
-		glColor3f(0.5f,0.5f,1);
+		glColor3f(0,0,1);
 		teapot->RenderGeometry();
 		glPopMatrix();
 
@@ -284,20 +244,13 @@ void drawObjects(){
 		glPushMatrix();
 		glScalef(0.2f,0.2f,0.2f);
 		glTranslatef(4.0f,2.0f,-4.0f);
+		glColor3f(1,1,1);
 		box->RenderGeometry();
 		glPopMatrix();
-
-//		glBegin(GL_TRIANGLES);
-//			glColor3f(1,1,1);
-//			glVertex3f(-2.0, -1.0, -1.0);
-//			glVertex3f(-2.0, 1.0, -1.0);
-//			glVertex3f(-0.0, 1.0, -1.0);
-//		glEnd();
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glDisable(GL_COLOR_MATERIAL);
-
 	glPopMatrix();
 
 
@@ -316,12 +269,24 @@ void loadObjects(){
 	printf("Reached loading objects \n");
 	table->ReadOBJ("Table.obj");
 	table->ReadTexture("wood.jpg");
+	table->CreateGLPolyGeometry();
+
 	bunny->ReadOBJ("Bunny.obj");
+	bunny->CreateGLPolyGeometry();
+
 	sphere->ReadOBJ("Sphere.obj");
+	sphere->CreateGLPolyGeometry();
+
+	glColor3f(0.5f,0.5f,1);
 	teapot->ReadOBJ("Teapot.obj");
+	teapot->CreateGLPolyGeometry();
+
 	torus->ReadOBJ("Torus.obj");
+	torus->CreateGLPolyGeometry();
+
 	box->ReadOBJ("Box.obj");
 	box->ReadTexture("brick.jpg");
+	box->CreateGLPolyGeometry();
 }
 void setCamera(){
 	glMatrixMode(GL_PROJECTION);
@@ -342,9 +307,10 @@ void setLight() {
 	//Spotlight
 	float spotdirection[] = { 0.0f, -1.0f, 0.0f, 0.0f };
 	float spotposition[] = { 0.0f, 5.0f, 0.1f, 1.0f };
-	float spotdiffintensity[] = { 0.15f, 0.15f, 0.15f, 1.0f };
+	float spotdiffintensity[] = { 0.10f, 0.10f, 0.10f, 1.0f };
 	float spotambient[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	const float expo = 2.0f;
+	float spotspecular[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	const float expo = 10.0f;
 
 	glLightfv(GL_LIGHT0, GL_POSITION, spotposition);
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, spotdirection);
@@ -352,25 +318,28 @@ void setLight() {
 	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 7.0f);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, spotdiffintensity);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, spotambient);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, spotspecular);
 	glEnable(GL_LIGHT0);
 	//glutSolidSphere(1,10,10);
 
 	//Point light
 	glPushMatrix();
-	glTranslatef(-1,1,2);
+	glTranslatef(-1,3,2);
 	float pointdirection[] = { 0.0f, -1.0f, 0.0f, 1.0f };
-	float pointdiffintensity[] = { 0.17f, 0.17f, 0.13f, 1.0f };
+	float pointdiffintensity[] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	float pointambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float pointspecular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	glLightfv(GL_LIGHT1, GL_POSITION, pointdirection);
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, pointdiffintensity);
 	glLightfv(GL_LIGHT1, GL_AMBIENT, pointambient);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, pointspecular);
 	glEnable(GL_LIGHT1);
 	glPopMatrix();
 
 	//Ambient light
 	glPushMatrix();
-	glTranslatef(-1,1,2);
+	glTranslatef(-1,10,2);
 	float ambient[] = { 0.1f, 0.1f, 0.0f, 1.0f };
 	glLightfv(GL_LIGHT2, GL_AMBIENT, ambient);
 	glEnable(GL_LIGHT2);
