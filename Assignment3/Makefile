@@ -2,7 +2,7 @@ CC = g++
 LPATH = -L/usr/pkg/lib
 LDPATH = -Wl,-R/usr/pkg/lib 
 CFLAGS=-g -Wall
-LIBS=-lGL -lglut -lGLU -ljpeg -lm
+LIBS=-lGL -lglut -lGLU -ljpeg -lm -lGLEW
 IPATH= -I/usr/pkg/include
 
 all: TextureDemo

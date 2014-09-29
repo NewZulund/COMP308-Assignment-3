@@ -40,14 +40,31 @@
  * OpenGL(R) is a registered trademark of Silicon Graphics, Inc.
  */
 
-#include <GL/glut.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <GL/glew.h>
+#include <GL/glut.h>
 #include <math.h>
 #include "G308_ImageLoader.h"
 #include "G308_Geometry.h"
 #include "string.h"
 #include "define.h"
+#include "textfile.cpp"
+
+void initShaders();
+void setCamera();
+void setLight();
+void draw2D();
+void loadObjects();
+void drawObjects();
+void drawText(char * string, float x, float y);
+void drawSpotlight(float * spotDirection, float cutoff);
+
+void keyboard(unsigned char key, int x, int y);
+void keyboardSpecialCall(int key, int x, int y);
+
+void display(void);
+void reshape(int w, int h);
 
 G308_Geometry * table;
 G308_Geometry * sphere;
@@ -63,29 +80,51 @@ float zoom = 1;
 float xRot = 0;
 float yRot = 0;
 float zRot = 0;
+int modelXRotation = 0;
 
 float spotXRot = 0;
 float spotYRot = 0;
 float spotZRot = 0;
-float spotCutOff  = 7.0f;
+float spotCutOff = 7.0f;
 
-int modelXRotation = 0;
+GLuint v,f,f2,program;
 
-void loadObjects();
-void drawObjects();
-void setCamera();
-void setLight();
-void drawText(char * string, float x, float y);
-void keyboardSpecialCall(int key, int x, int y);
-void drawSpotlight(float * spotDirection, float cutoff);
-void draw2D();
+void initShaders(){
+	char * vs = NULL;
+	char * fs = NULL;
+
+	v = glCreateShader(GL_VERTEX_SHADER);
+	f = glCreateShader(GL_FRAGMENT_SHADER);
+
+	vs = textFileRead("shaders/phongVert.vert");
+	fs = textFileRead("shaders/phongFrag.frag");
+
+	const char * ff = fs;
+	const char * vv = vs;
+
+	glShaderSource(v,1, &vv,NULL);
+	glShaderSource(f,1,&ff,NULL);
+
+	free(vs);
+	free(fs);
+
+	glCompileShader(v);
+	glCompileShader(f);
+
+	program = glCreateProgram();
+
+	glAttachShader(program,f);
+	glAttachShader(program,v);
+
+	glLinkProgram(program);
+	glUseProgram(program);
+}
 
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//If we're using alpha, we need to do this
 
 	setCamera();
-	draw2D();
 
 	glPushMatrix();
 	setLight();
@@ -96,6 +135,12 @@ void display(void) {
 	glShadeModel(GL_SMOOTH);
 	drawObjects();
 	glPopMatrix();
+
+	glDisable(GL_LIGHTING);
+	glColor3f(1,1,1);
+	draw2D();
+	glEnable(GL_LIGHTING);
+
 	glFlush();
 
 }
@@ -146,30 +191,10 @@ void keyboard(unsigned char key, int x, int y) {
 	glutPostRedisplay();
 }
 
-int main(int argc, char** argv) {
-	glutInit(&argc, argv);
-
-	//Note the addition of GLUT_ALPHA to the display mode flags
-	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_ALPHA | GLUT_DEPTH);
-	glutInitWindowSize(G308_WIN_WIDTH, G308_WIN_HEIGHT);
-	glutInitWindowPosition(100, 100);
-	glutCreateWindow(argv[0]);
-
-	loadObjects();
-
-	glutDisplayFunc(display);
-	glutReshapeFunc(reshape);
-	glutKeyboardFunc(keyboard);
-	glutSpecialFunc(keyboardSpecialCall);
-
-	display();
-	glutMainLoop();
-	return 0;
-}
 void drawObjects() {
 	glPushMatrix();
 	glColor3f(0, 0, 0);
-	glRotatef(modelXRotation,1,0,0);
+	glRotatef(modelXRotation, 1, 0, 0);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
@@ -232,6 +257,7 @@ void loadObjects() {
 	torus = new G308_Geometry("torus");
 	box = new G308_Geometry("box");
 
+
 	table->ReadOBJ("Table.obj");
 	table->ReadTexture("wood.jpg");
 	table->CreateGLPolyGeometry();
@@ -272,7 +298,7 @@ void setCamera() {
 void setLight() {
 	glPushMatrix();
 
-	if(lockLights == TRUE){
+	if (lockLights == TRUE) {
 		glLoadIdentity();
 	}
 
@@ -282,7 +308,7 @@ void setLight() {
 	glRotatef(spotZRot, 0, 0, 1);
 	glRotatef(spotXRot, 1, 0, 0);
 
-	glTranslatef(0.0,5.0,0.1);
+	glTranslatef(0.0, 5.0, 0.1);
 
 	float spotdirection[] = { 0.0f, -1.0f, 0.0f, 0.0f };
 	//float spotposition[] = { 0.0f, 5.0f, 0.1f, 1.0f };
@@ -309,7 +335,7 @@ void setLight() {
 	//Point light
 	glPushMatrix();
 	glTranslatef(-1, 3, 2);
-	float pointdiffintensity[] = { 0.12f, 0.12f, 0.12f, 1.0f };
+	float pointdiffintensity[] = { 0.3f, 0.3f, 0.3f, 1.0f };
 	float pointambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	float pointspecular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -334,9 +360,9 @@ void setLight() {
 
 }
 
-void drawSpotlight(float * spotDirection, float cutoff){
-	glColor3f(1,0,0);
-	glutSolidSphere(0.15f, 10,10);
+void drawSpotlight(float * spotDirection, float cutoff) {
+	glColor3f(1, 0, 0);
+	glutSolidSphere(0.15f, 10, 10);
 	glPushMatrix();
 
 	GLUquadricObj *quadratic;
@@ -348,7 +374,7 @@ void drawSpotlight(float * spotDirection, float cutoff){
 	cutoff = cutoff * M_PI / 180; //Convert to degrees
 	float diameter = tan(cutoff) * length;
 
-	glRotatef(90, 1,0,0);
+	glRotatef(90, 1, 0, 0);
 	gluCylinder(quadratic, 0.01f, diameter, length, 32, 32);
 	glPopMatrix();
 
@@ -364,23 +390,19 @@ void draw2D() {
 	glPushMatrix();
 	glLoadIdentity();
 
+	glDisable(GL_LIGHTING);
 	gluOrtho2D(0, G308_WIN_WIDTH, 0, G308_WIN_HEIGHT);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_LIGHTING);
 
 	//Transparency
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glPushMatrix();
-	//drawPoints();
-	glPopMatrix();
-
 	//Text Over UI
-	drawText("WASD : Spotlight Controls", -0.8f, 0.9f);
-	drawText("ARROW KEYS : Camera Controls", -0.8f, 0.85f);
+	drawText("WASD : Spotlight Controls | A/E Cutoff", -0.8f, 0.9f);
+	drawText("ARROW KEYS : Camera Controls | t Rotate models", -0.8f, 0.85f);
 	drawText("Press , or . to zoom in and out", -0.8f, 0.75f);
 	drawText("Mouse menu for animation control. ", -0.8f, 0.7f);
 
@@ -388,6 +410,10 @@ void draw2D() {
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_LIGHTING);
 }
 
 void drawText(char * words, float x, float y) {
@@ -421,20 +447,49 @@ void drawText(char * words, float x, float y) {
 void keyboardSpecialCall(int key, int x, int y) {
 
 	int rotation = 5;
-	if(key == GLUT_KEY_UP){
+	if (key == GLUT_KEY_UP) {
 		zRot = zRot + rotation;
 	}
-	if(key == GLUT_KEY_DOWN){
-			zRot = zRot - rotation;
-		}
-	if(key == GLUT_KEY_LEFT){
+	if (key == GLUT_KEY_DOWN) {
+		zRot = zRot - rotation;
+	}
+	if (key == GLUT_KEY_LEFT) {
 		yRot = yRot + rotation;
 	}
-	if(key == GLUT_KEY_RIGHT){
+	if (key == GLUT_KEY_RIGHT) {
 		yRot = yRot - rotation;
 	}
 
 	glutPostRedisplay();
 }
 
+int main(int argc, char** argv) {
+	glutInit(&argc, argv);
 
+	//Note the addition of GLUT_ALPHA to the display mode flags
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_ALPHA | GLUT_DEPTH);
+	glutInitWindowSize(G308_WIN_WIDTH, G308_WIN_HEIGHT);
+	glutInitWindowPosition(100, 100);
+	glutCreateWindow("Shader Project");
+
+	glutDisplayFunc(display);
+	glutReshapeFunc(reshape);
+	glutKeyboardFunc(keyboard);
+	glutSpecialFunc(keyboardSpecialCall);
+
+	GLenum err = glewInit();
+
+	if (err != GLEW_OK) {
+		printf("Glew ERROR \n");
+		return 0;
+	}
+
+	initShaders();
+	loadObjects();
+
+
+
+	display();
+	glutMainLoop();
+	return 0;
+}
