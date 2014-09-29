@@ -250,6 +250,34 @@ void drawObjects() {
 }
 
 void loadObjects() {
+
+	//Load Cubemap
+	//TODO LOAD IMAGES
+	GLubyte red[3] = {255,0,0};
+	GLubyte green[3] = {0,255,0};
+	GLubyte blue[3] = {0,0,255};
+	GLubyte cyan[3] = {0,255,255};
+	GLubyte magenta[3] = {255,0,255};
+	GLubyte yellow[3] = {255,255,0};
+
+
+	glEnable(GL_TEXTURE_CUBE_MAP);
+	GLuint texName = NULL;
+	glGenTextures(1,&texName);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texName);
+
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, red);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, green);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, blue);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, cyan);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, magenta);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, yellow);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP,GL_TEXTURE_MAG_FILTER,GL_NEAREST );
+	glDisable(GL_TEXTURE_CUBE_MAP);
+
+
 	table = new G308_Geometry("table");
 	bunny = new G308_Geometry("bunny");
 	sphere = new G308_Geometry("sphere");

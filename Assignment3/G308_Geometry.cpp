@@ -322,7 +322,7 @@ void G308_Geometry::RenderGeometry() {
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
 	}else if (fn[1] == 'p') {	//sphere
 		GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-		GLfloat mat_shininess[] = { 45.0 };
+		GLfloat mat_shininess[] = { 5.0 };
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
 	}else if (fn[1] == 'e') {	//Teapot
