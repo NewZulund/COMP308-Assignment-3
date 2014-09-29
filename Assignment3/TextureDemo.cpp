@@ -179,7 +179,7 @@ void keyboard(unsigned char key, int x, int y) {
 		spotCutOff += 1;
 		break;
 	case 't':
-		modelXRotation += 5;
+		modelXRotation -= 5;
 		modelXRotation = modelXRotation % 360;
 		break;
 	case 'l':
@@ -218,14 +218,14 @@ void drawObjects() {
 	glPushMatrix();
 	glScalef(0.2f, 0.2f, 0.2f);
 	glTranslatef(-4, 2, 4);
-	glColor3f(1, 1, 0);
+	glColor3ub(205, 127, 50);
 	sphere->RenderGeometry();
 	glPopMatrix();
 
 	glPushMatrix();
 	glScalef(0.2f, 0.2f, 0.2f);
 	glTranslatef(-4, 0, -4);
-	glColor3f(0, 0, 1);
+	glColor3f(0.8, 0.8, 1);
 	teapot->RenderGeometry();
 	glPopMatrix();
 
@@ -257,26 +257,30 @@ void loadObjects() {
 	torus = new G308_Geometry("torus");
 	box = new G308_Geometry("box");
 
-
 	table->ReadOBJ("Table.obj");
 	table->ReadTexture("wood.jpg");
 	table->CreateGLPolyGeometry();
 
 	bunny->ReadOBJ("Bunny.obj");
+	bunny->ReadTexture("white.jpg");
 	bunny->CreateGLPolyGeometry();
 
 	sphere->ReadOBJ("Sphere.obj");
+	sphere->ReadTexture("white.jpg");
 	sphere->CreateGLPolyGeometry();
 
 	teapot->ReadOBJ("Teapot.obj");
+	teapot->ReadTexture("white.jpg");
 	teapot->CreateGLPolyGeometry();
 
 	torus->ReadOBJ("Torus.obj");
+	torus->ReadTexture("white.jpg");
 	torus->CreateGLPolyGeometry();
 
 	box->ReadOBJ("Box.obj");
 	box->ReadTexture("brick.jpg");
 	box->CreateGLPolyGeometry();
+
 }
 void setCamera() {
 	glMatrixMode(GL_PROJECTION);
@@ -311,9 +315,8 @@ void setLight() {
 	glTranslatef(0.0, 5.0, 0.1);
 
 	float spotdirection[] = { 0.0f, -1.0f, 0.0f, 0.0f };
-	//float spotposition[] = { 0.0f, 5.0f, 0.1f, 1.0f };
 	float spotposition[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	float spotdiffintensity[] = { 0.10f, 0.10f, 0.10f, 1.0f };
+	float spotdiffuse[] = { 0.10f, 0.10f, 0.10f, 1.0f };
 	float spotambient[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	float spotspecular[] = { 0.05f, 0.05f, 0.05f, 1.0f };
 	const float expo = 2.0f;
@@ -322,9 +325,8 @@ void setLight() {
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, spotdirection);
 	glLightfv(GL_LIGHT0, GL_SPOT_EXPONENT, &expo);
 	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, spotCutOff);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, spotdiffintensity);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, spotdiffuse);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, spotambient);
-	//glLightfv(GL_LIGHT0, GL_SPECULAR, spotambient);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, spotspecular);
 	glEnable(GL_LIGHT0);
 
@@ -334,26 +336,43 @@ void setLight() {
 
 	//Point light
 	glPushMatrix();
-	glTranslatef(-1, 3, 2);
-	float pointdiffintensity[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+	glTranslatef(-1, 1.5, 3);
+	glutSolidSphere(0.1f,10,10);
+	float pointdiffuse[] = { 0.2f, 0.2f, 0.2f, 1.0f };
 	float pointambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	float pointspecular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	float pointspecular[] = { 0.3f, 0.3f, 0.3f, 1.0f };
 
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, pointdiffintensity);
+	glLightfv(GL_LIGHT1, GL_POSITION, spotposition);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, pointspecular);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, pointdiffuse);
 	glLightfv(GL_LIGHT1, GL_AMBIENT, pointambient);
 
-	glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 0.0);
-	glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 1.0);
-	glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.5);
 	glEnable(GL_LIGHT1);
 	glPopMatrix();
 
+
+	//TODO make directional
+	//Directional light
+	glPushMatrix();
+	float directdirection[] = { 0.0f, -1.0f, 0.0f, 0.0f };
+	float directdiffuse[] = { 0.0, 0.0, 0.0, 1.0f };
+	float directambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float directspecular[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+	glLightfv(GL_LIGHT2, GL_POSITION, directdirection);
+	glLightfv(GL_LIGHT2, GL_SPECULAR, directspecular);
+	glLightfv(GL_LIGHT2, GL_DIFFUSE, directdiffuse);
+	glLightfv(GL_LIGHT2, GL_AMBIENT, directambient);
+
+	glEnable(GL_LIGHT2);
+	glPopMatrix();
+
+
 	//Ambient light
 	glPushMatrix();
-	glTranslatef(-1, 10, 2);
-	float ambient[] = { 0.1f, 0.1f, 0.0f, 1.0f };
-	glLightfv(GL_LIGHT2, GL_AMBIENT, ambient);
-	glEnable(GL_LIGHT2);
+	float ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	glLightfv(GL_LIGHT3, GL_AMBIENT, ambient);
+	glEnable(GL_LIGHT3);
 	glPopMatrix();
 
 	glPopMatrix();
@@ -493,3 +512,4 @@ int main(int argc, char** argv) {
 	glutMainLoop();
 	return 0;
 }
+

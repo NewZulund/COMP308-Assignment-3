@@ -207,9 +207,6 @@ void G308_Geometry::ReadTexture(const char* filename) {
 	strcpy(extension, &filename[i + 1]);
 	if (strcmp(extension, "jpg") == 0 || strcmp(extension, "jpeg") == 0)
 		loadTextureFromJPEG(file, &t);
-	else if (strcmp(extension, "png") == 0)
-		//Do nothing
-		1 + 1;
 	else {
 		printf("Invalid format. Only supports JPEG and PNG.\n");
 		exit(1);
@@ -315,21 +312,30 @@ void G308_Geometry::toggleMode() {
 void G308_Geometry::RenderGeometry() {
 	if (fn[0] == 'b') {	//bunny
 		GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-		GLfloat mat_shininess[] = { 50.0 };
+		GLfloat mat_shininess[] = { 20.0 };
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
-	}
-	if (fn[2] == 'r') {	//torus
+	}else if (fn[2] == 'r') {	//torus
 		GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
 		GLfloat mat_shininess[] = { 56.0 };
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
-	}
-	if (fn[1] == 'p') {	//sphere
+	}else if (fn[1] == 'p') {	//sphere
+		GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+		GLfloat mat_shininess[] = { 45.0 };
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
+	}else if (fn[1] == 'e') {	//Teapot
+		GLfloat mat_specular[] = { 1, 1, 1, 1.0 };
+		GLfloat mat_shininess[] = { 90.0 };
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
+	}else {
 		GLfloat mat_specular[] = { 0.05, 0.05, 0.05, 1.0 };
 		GLfloat mat_shininess[] = { 56.0 };
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
+
 	}
 	glCallList(m_glGeomListPoly);
 }
