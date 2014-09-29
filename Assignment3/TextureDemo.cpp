@@ -69,6 +69,8 @@ float spotYRot = 0;
 float spotZRot = 0;
 float spotCutOff  = 7.0f;
 
+int modelXRotation = 0;
+
 void loadObjects();
 void drawObjects();
 void setCamera();
@@ -131,6 +133,10 @@ void keyboard(unsigned char key, int x, int y) {
 	case 'e':
 		spotCutOff += 1;
 		break;
+	case 't':
+		modelXRotation += 5;
+		modelXRotation = modelXRotation % 360;
+		break;
 	case 'l':
 		lockLights == TRUE ? lockLights = FALSE : lockLights = TRUE;
 		break;
@@ -163,6 +169,7 @@ int main(int argc, char** argv) {
 void drawObjects() {
 	glPushMatrix();
 	glColor3f(0, 0, 0);
+	glRotatef(modelXRotation,1,0,0);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
