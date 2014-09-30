@@ -2,12 +2,9 @@
 
 //Based on Ozone3D Phong 
 
-varying vec3 normal, spotLightDir, pointLightDir;
-varying vec3  dirLightDir, eyeVec, reflecVec;
+varying vec3 normal, spotLightDir, pointLightDir, dirLightDir, eyeVec;
 varying vec2 texUV;
-
-uniform sampler2D curTexture;
-uniform samplerCube cubeMap;
+uniform sampler2D texMap,curTexture;
 
 void main (void)
 {
@@ -62,11 +59,15 @@ void main (void)
 	}
 
 	final_color *= texture2D(curTexture, gl_TexCoord[0].st);
-	
-	//CubeMap multiplication
-	//vec4 cubeTexCol = textureCube(cubeMap, reflecVec);
-	//final_color = vec4(reflecVec,1.0);
-	
-	gl_FragColor = final_color;		
-	
+
+
+
+
+
+
+	gl_FragColor = final_color;			
+}
+
+void test(){
+
 }

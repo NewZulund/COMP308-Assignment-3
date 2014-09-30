@@ -1,7 +1,8 @@
 #version 120
 //Based on Ozone3D Phong + Materials	
 	
-varying vec3 normal, spotLightDir, pointLightDir, dirLightDir, eyeVec, reflecVec;
+varying vec3 normal, spotLightDir, pointLightDir; 
+varying vec3 dirLightDir, eyeVec, reflecVec;
 
 void main()
 {	
@@ -20,5 +21,7 @@ void main()
 	//Add Texture
 	gl_TexCoord[0] = gl_MultiTexCoord0;
 	
-	//reflecVec = reflect(eyePos.xyz, normalize(normal.xyz));
+	//Calculate reflection off vert
+	vec3 NN = normalize(normal.xyz);
+	reflecVec = reflect(eyeVec, NN);
 }

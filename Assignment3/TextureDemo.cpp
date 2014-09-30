@@ -66,6 +66,10 @@ void keyboardSpecialCall(int key, int x, int y);
 void display(void);
 void reshape(int w, int h);
 
+void createCubemap();
+void createCubeMapModel();
+void drawEnvironmentMap();
+
 G308_Geometry * table;
 G308_Geometry * sphere;
 G308_Geometry * torus;
@@ -76,7 +80,7 @@ G308_Geometry * box;
 
 int lockLights = FALSE;
 
-float zoom = 1;
+float zoom = 200;
 float xRot = 0;
 float yRot = 0;
 float zRot = 0;
@@ -87,9 +91,13 @@ float spotYRot = 0;
 float spotZRot = 0;
 float spotCutOff = 7.0f;
 
-GLuint v,f,f2,program;
+GLuint v, f, f2, program, cubeMapTex;
+GLuint texName[1];
 
-void initShaders(){
+GLuint vbo;
+GLuint vao;
+
+void initShaders() {
 	char * vs = NULL;
 	char * fs = NULL;
 
@@ -102,8 +110,8 @@ void initShaders(){
 	const char * ff = fs;
 	const char * vv = vs;
 
-	glShaderSource(v,1, &vv,NULL);
-	glShaderSource(f,1,&ff,NULL);
+	glShaderSource(v, 1, &vv, NULL);
+	glShaderSource(f, 1, &ff, NULL);
 
 	free(vs);
 	free(fs);
@@ -113,8 +121,8 @@ void initShaders(){
 
 	program = glCreateProgram();
 
-	glAttachShader(program,f);
-	glAttachShader(program,v);
+	glAttachShader(program, f);
+	glAttachShader(program, v);
 
 	glLinkProgram(program);
 	glUseProgram(program);
@@ -129,6 +137,10 @@ void display(void) {
 	glPushMatrix();
 	setLight();
 
+	glDisable(GL_LIGHTING);
+	drawEnvironmentMap();
+	glEnable(GL_LIGHTING);
+
 	//3D
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -137,7 +149,7 @@ void display(void) {
 	glPopMatrix();
 
 	glDisable(GL_LIGHTING);
-	glColor3f(1,1,1);
+	glColor3f(1, 1, 1);
 	draw2D();
 	glEnable(GL_LIGHTING);
 
@@ -192,6 +204,7 @@ void keyboard(unsigned char key, int x, int y) {
 }
 
 void drawObjects() {
+
 	glPushMatrix();
 	glColor3f(0, 0, 0);
 	glRotatef(modelXRotation, 1, 0, 0);
@@ -249,34 +262,59 @@ void drawObjects() {
 	glPopMatrix();
 }
 
+void createCubemap() {
+
+	TextureInfo front;
+	loadTextureFromJPEG("cubemap/front.jpg", &front);
+	TextureInfo back;
+	loadTextureFromJPEG("cubemap/back.jpg", &back);
+	TextureInfo left;
+	loadTextureFromJPEG("cubemap/left.jpg", &left);
+	TextureInfo right;
+	loadTextureFromJPEG("cubemap/right.jpg", &right);
+	TextureInfo top;
+	loadTextureFromJPEG("cubemap/top.jpg", &top);
+	TextureInfo bottom;
+	loadTextureFromJPEG("cubemap/bottom.jpg", &bottom);
+
+	glEnable(GL_TEXTURE_CUBE_MAP);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	glGenTextures(1, &texName[0]);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texName[0]);
+
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, 3, 512, 512, 0, GL_RGB,
+			GL_UNSIGNED_BYTE, left.textureData);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, 3, 512, 512, 0, GL_RGB,
+			GL_UNSIGNED_BYTE, right.textureData);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, 3, 512, 512, 0, GL_RGB,
+			GL_UNSIGNED_BYTE, top.textureData);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, 3, 512, 512, 0, GL_RGB,
+			GL_UNSIGNED_BYTE, bottom.textureData);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, 3, 512, 512, 0, GL_RGB,
+			GL_UNSIGNED_BYTE, front.textureData);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, 3, 512, 512, 0, GL_RGB,
+			GL_UNSIGNED_BYTE, back.textureData);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	cubeMapTex = glGetUniformLocation(program, "cubeMap");
+	glUniform1i(cubeMapTex, texName[0]);
+
+	glDisable(GL_TEXTURE_CUBE_MAP);
+
+	createCubeMapModel();
+
+}
+
 void loadObjects() {
 
 	//Load Cubemap
-	//TODO LOAD IMAGES
-	GLubyte red[3] = {255,0,0};
-	GLubyte green[3] = {0,255,0};
-	GLubyte blue[3] = {0,0,255};
-	GLubyte cyan[3] = {0,255,255};
-	GLubyte magenta[3] = {255,0,255};
-	GLubyte yellow[3] = {255,255,0};
-
-
-	glEnable(GL_TEXTURE_CUBE_MAP);
-	GLuint texName = NULL;
-	glGenTextures(1,&texName);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texName);
-
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, red);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, green);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, blue);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, cyan);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, magenta);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z ,0,3,1,1,0,GL_RGB,GL_UNSIGNED_BYTE, yellow);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP,GL_TEXTURE_MAG_FILTER,GL_NEAREST );
-	glDisable(GL_TEXTURE_CUBE_MAP);
-
+	createCubemap();
 
 	table = new G308_Geometry("table");
 	bunny = new G308_Geometry("bunny");
@@ -365,7 +403,7 @@ void setLight() {
 	//Point light
 	glPushMatrix();
 	glTranslatef(-1, 1.5, 3);
-	glutSolidSphere(0.1f,10,10);
+	glutSolidSphere(0.1f, 10, 10);
 	float pointdiffuse[] = { 0.2f, 0.2f, 0.2f, 1.0f };
 	float pointambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	float pointspecular[] = { 0.3f, 0.3f, 0.3f, 1.0f };
@@ -377,7 +415,6 @@ void setLight() {
 
 	glEnable(GL_LIGHT1);
 	glPopMatrix();
-
 
 	//TODO make directional
 	//Directional light
@@ -394,7 +431,6 @@ void setLight() {
 
 	glEnable(GL_LIGHT2);
 	glPopMatrix();
-
 
 	//Ambient light
 	glPushMatrix();
@@ -534,10 +570,57 @@ int main(int argc, char** argv) {
 	initShaders();
 	loadObjects();
 
-
-
 	display();
 	glutMainLoop();
 	return 0;
+}
+
+/*
+ * Code from antongerdelan.net
+ */
+void createCubeMapModel() {
+	float points[] = { -10.0f, 10.0f, -10.0f, -10.0f, -10.0f, -10.0f, 10.0f,
+			-10.0f, -10.0f, 10.0f, -10.0f, -10.0f, 10.0f, 10.0f, -10.0f, -10.0f,
+			10.0f, -10.0f,
+
+			-10.0f, -10.0f, 10.0f, -10.0f, -10.0f, -10.0f, -10.0f, 10.0f,
+			-10.0f, -10.0f, 10.0f, -10.0f, -10.0f, 10.0f, 10.0f, -10.0f, -10.0f,
+			10.0f,
+
+			10.0f, -10.0f, -10.0f, 10.0f, -10.0f, 10.0f, 10.0f, 10.0f, 10.0f,
+			10.0f, 10.0f, 10.0f, 10.0f, 10.0f, -10.0f, 10.0f, -10.0f, -10.0f,
+
+			-10.0f, -10.0f, 10.0f, -10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f,
+			10.0f, 10.0f, 10.0f, 10.0f, -10.0f, 10.0f, -10.0f, -10.0f, 10.0f,
+
+			-10.0f, 10.0f, -10.0f, 10.0f, 10.0f, -10.0f, 10.0f, 10.0f, 10.0f,
+			10.0f, 10.0f, 10.0f, -10.0f, 10.0f, 10.0f, -10.0f, 10.0f, -10.0f,
+
+			-10.0f, -10.0f, -10.0f, -10.0f, -10.0f, 10.0f, 10.0f, -10.0f,
+			-10.0f, 10.0f, -10.0f, -10.0f, -10.0f, -10.0f, 10.0f, 10.0f, -10.0f,
+			10.0f };
+
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, 3 * 36 * sizeof(float), &points,
+			GL_STATIC_DRAW);
+
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+}
+
+void drawEnvironmentMap(){
+	glDepthMask(GL_FALSE);
+	glUseProgram(program);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMapTex);
+	glColor3f(1,0.4,1);
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glDepthMask(GL_TRUE);
 }
 
