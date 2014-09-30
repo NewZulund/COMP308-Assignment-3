@@ -91,7 +91,7 @@ float spotYRot = 0;
 float spotZRot = 0;
 float spotCutOff = 7.0f;
 
-GLuint v, f, f2, phongProg, skyProg, cubeMapTex;
+GLuint v, f,sv,sf, f2, phongProg, skyProg, cubeMapTex;
 GLuint * tex_cube = NULL;
 
 GLuint vbo;
@@ -126,20 +126,50 @@ void initShaders() {
 
 	glLinkProgram(phongProg);
 	glUseProgram(phongProg);
+
+
+	//Skybox prog
+	vs = NULL;
+	fs = NULL;
+
+	sv = glCreateShader(GL_VERTEX_SHADER);
+	sf = glCreateShader(GL_FRAGMENT_SHADER);
+
+	vs = textFileRead("shaders/skymap.vert");
+	fs = textFileRead("shaders/skymap.frag");
+
+	ff = fs;
+	vv = vs;
+
+	glShaderSource(sv, 1, &vv, NULL);
+	glShaderSource(sf, 1, &ff, NULL);
+
+	free(vs);
+	free(fs);
+
+	glCompileShader(sv);
+	glCompileShader(sf);
+
+	skyProg = glCreateProgram();
+
+	glAttachShader(skyProg, sf);
+	glAttachShader(skyProg, sv);
+
+	glLinkProgram(skyProg);
+
 }
 
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//If we're using alpha, we need to do this
+	glLoadIdentity();
 
 	setCamera();
+	drawEnvironmentMap();
 
 	glPushMatrix();
 	setLight();
 
-	//glDisable(GL_LIGHTING);
-	drawEnvironmentMap();
-	//glEnable(GL_LIGHTING);
 
 	//3D
 	glMatrixMode(GL_MODELVIEW);
@@ -285,6 +315,19 @@ void createCubemap() {
 	TextureInfo bottom;
 	loadTextureFromJPEG("cubemap/bottom.jpg", &bottom);
 
+	/*TextureInfo front;
+	loadTextureFromJPEG("cubemap/humus/heroessquare/poz.jpg", &front);
+	TextureInfo back;
+	loadTextureFromJPEG("cubemap/humus/heroessquare/negz.jpg", &back);
+	TextureInfo left;
+	loadTextureFromJPEG("cubemap/humus/heroessquare/negx.jpg", &left);
+	TextureInfo right;
+	loadTextureFromJPEG("cubemap/humus/heroessquare/posx.jpg", &right);
+	TextureInfo top;
+	loadTextureFromJPEG("cubemap/humus/heroessquare/negy.jpg", &top);
+	TextureInfo bottom;
+	loadTextureFromJPEG("cubemap/humus/heroessquare/posy.jpg", &bottom);	 */
+
 	glEnable(GL_TEXTURE_CUBE_MAP);
 	glActiveTexture(GL_TEXTURE0);
 
@@ -295,11 +338,11 @@ void createCubemap() {
 
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, 512, 512, 0,
 			GL_RGB,
-			GL_UNSIGNED_BYTE, left.textureData);
+			GL_UNSIGNED_BYTE, right.textureData);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, 512, 512, 0,
 			GL_RGB,
-			GL_UNSIGNED_BYTE, right.textureData);
+			GL_UNSIGNED_BYTE, left.textureData);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, 512, 512, 0,
 			GL_RGB,
@@ -324,7 +367,7 @@ void createCubemap() {
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-	//cubeMapTex = glGetUniformLocation(program, "cubeMap");
+	//cubeMapTex = glGetUniformLocation(phongProg, "cubeMap");
 	//glUniform1i(cubeMapTex, *tex_cube);
 
 	glDisable(GL_TEXTURE_CUBE_MAP);
@@ -384,6 +427,20 @@ void setCamera() {
 	glRotatef(zRot, 1, 0, 0);
 	glRotatef(yRot, 0, 1, 0);
 	glRotatef(xRot, 0, 0, 1);
+
+
+	//TODO add proper perspective to skybox.
+	glUseProgram(skyProg);
+
+	GLfloat projMatrix[16];
+	GLfloat modelMatrix[16];
+	glGetFloatv(GL_PROJECTION, projMatrix);
+	glGetFloatv(GL_MODELVIEW, modelMatrix);
+
+	GLdouble cam = glGetUniformLocation(phongProg, "CameraPosition");
+	glUniform3f(cam, modelMatrix[0], modelMatrix[1],modelMatrix[2]);
+
+	glUseProgram(phongProg);
 }
 
 // Set Light
@@ -638,11 +695,12 @@ void createCubeMapModel() {
 
 void drawEnvironmentMap() {
 	glDepthMask (GL_FALSE);
-	glUseProgram (phongProg);
+	glUseProgram (skyProg);
 	glActiveTexture (GL_TEXTURE0);
 	glBindTexture (GL_TEXTURE_CUBE_MAP, *tex_cube);
 	glBindVertexArray (vao);
 	glDrawArrays (GL_TRIANGLES, 0, 36);
 	glDepthMask (GL_TRUE);
+	glUseProgram (phongProg);
 }
 

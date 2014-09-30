@@ -15,9 +15,19 @@ void main (void)
 	float spotSpec = 0;
 	float pointSpec = 0;
 	
-	//Includes ambient light
+	float shininessFactor = (1.0f / 128.0f) * gl_FrontMaterial.shininess;
+	
+	//Include ambient light
 	vec4 final_color = (gl_FrontLightModelProduct.sceneColor * gl_FrontMaterial.ambient) + (gl_LightSource[3].ambient * gl_FrontMaterial.ambient);
 	vec4 cube_map_color = textureCube(cubeMap, reflecVec);
+	
+	//CubeMap multiplication
+	float x = cube_map_color[0] * shininessFactor;
+	float y = cube_map_color[1] * shininessFactor;
+	float z = cube_map_color[2] * shininessFactor;
+	float a = 1.0f;
+	
+	vec4 cubeCol = vec4(x,y,z,1);	
 		
 	vec3 N = normalize(normal);
 	vec3 L = normalize(spotLightDir);
@@ -62,10 +72,11 @@ void main (void)
 		final_color += gl_LightSource[2].specular * gl_FrontMaterial.specular * specular;	
 	}
 
-	final_color *= texture2D(curTexture, gl_TexCoord[0].st); 
+	final_color *= texture2D(curTexture, gl_TexCoord[0].st);
 	
-	//CubeMap multiplication
-	final_color = vec4(cube_map_color.xyz, 1.0);
+	final_color = cubeCol;
+	
+	
 	gl_FragColor = final_color;
 			
 	
