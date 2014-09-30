@@ -17,6 +17,7 @@ void main (void)
 	
 	//Includes ambient light
 	vec4 final_color = (gl_FrontLightModelProduct.sceneColor * gl_FrontMaterial.ambient) + (gl_LightSource[3].ambient * gl_FrontMaterial.ambient);
+	vec4 cube_map_color = textureCube(cubeMap, reflecVec);
 		
 	vec3 N = normalize(normal);
 	vec3 L = normalize(spotLightDir);
@@ -61,12 +62,11 @@ void main (void)
 		final_color += gl_LightSource[2].specular * gl_FrontMaterial.specular * specular;	
 	}
 
-	final_color *= texture2D(curTexture, gl_TexCoord[0].st);
+	final_color *= texture2D(curTexture, gl_TexCoord[0].st); 
 	
 	//CubeMap multiplication
-	//vec4 cubeTexCol = textureCube(cubeMap, reflecVec);
-	//final_color = vec4(reflecVec,1.0);
-	
-	gl_FragColor = final_color;		
+	final_color = vec4(cube_map_color.xyz, 1.0);
+	gl_FragColor = final_color;
+			
 	
 }

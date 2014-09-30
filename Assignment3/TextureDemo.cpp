@@ -80,7 +80,7 @@ G308_Geometry * box;
 
 int lockLights = FALSE;
 
-float zoom = 200;
+float zoom = 100;
 float xRot = 0;
 float yRot = 0;
 float zRot = 0;
@@ -91,8 +91,8 @@ float spotYRot = 0;
 float spotZRot = 0;
 float spotCutOff = 7.0f;
 
-GLuint v, f, f2, program, cubeMapTex;
-GLuint texName[1];
+GLuint v, f, f2, phongProg, skyProg, cubeMapTex;
+GLuint * tex_cube = NULL;
 
 GLuint vbo;
 GLuint vao;
@@ -119,13 +119,13 @@ void initShaders() {
 	glCompileShader(v);
 	glCompileShader(f);
 
-	program = glCreateProgram();
+	phongProg = glCreateProgram();
 
-	glAttachShader(program, f);
-	glAttachShader(program, v);
+	glAttachShader(phongProg, f);
+	glAttachShader(phongProg, v);
 
-	glLinkProgram(program);
-	glUseProgram(program);
+	glLinkProgram(phongProg);
+	glUseProgram(phongProg);
 }
 
 void display(void) {
@@ -137,9 +137,9 @@ void display(void) {
 	glPushMatrix();
 	setLight();
 
-	glDisable(GL_LIGHTING);
+	//glDisable(GL_LIGHTING);
 	drawEnvironmentMap();
-	glEnable(GL_LIGHTING);
+	//glEnable(GL_LIGHTING);
 
 	//3D
 	glMatrixMode(GL_MODELVIEW);
@@ -196,6 +196,12 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	case 'l':
 		lockLights == TRUE ? lockLights = FALSE : lockLights = TRUE;
+		break;
+	case ',':
+		zoom += 5;
+		break;
+	case '.':
+		zoom -= 5;
 		break;
 	default:
 		break;
@@ -264,6 +270,8 @@ void drawObjects() {
 
 void createCubemap() {
 
+	tex_cube = (GLuint*) malloc(sizeof(GLuint) * 8);
+
 	TextureInfo front;
 	loadTextureFromJPEG("cubemap/front.jpg", &front);
 	TextureInfo back;
@@ -278,32 +286,46 @@ void createCubemap() {
 	loadTextureFromJPEG("cubemap/bottom.jpg", &bottom);
 
 	glEnable(GL_TEXTURE_CUBE_MAP);
+	glActiveTexture(GL_TEXTURE0);
+
+	glGenTextures(1, tex_cube);
+	printf("Swag \n");
+	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
+	printf("Swag 2 \n");
+
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, 512, 512, 0,
+			GL_RGB,
+			GL_UNSIGNED_BYTE, left.textureData);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, 512, 512, 0,
+			GL_RGB,
+			GL_UNSIGNED_BYTE, right.textureData);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, 512, 512, 0,
+			GL_RGB,
+			GL_UNSIGNED_BYTE, bottom.textureData);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, 512, 512, 0,
+			GL_RGB,
+			GL_UNSIGNED_BYTE, top.textureData);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, 512, 512, 0,
+			GL_RGB,
+			GL_UNSIGNED_BYTE, front.textureData);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, 512, 512, 0,
+			GL_RGB,
+			GL_UNSIGNED_BYTE, back.textureData);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-	glGenTextures(1, &texName[0]);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texName[0]);
-
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, 3, 512, 512, 0, GL_RGB,
-			GL_UNSIGNED_BYTE, left.textureData);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, 3, 512, 512, 0, GL_RGB,
-			GL_UNSIGNED_BYTE, right.textureData);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, 3, 512, 512, 0, GL_RGB,
-			GL_UNSIGNED_BYTE, top.textureData);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, 3, 512, 512, 0, GL_RGB,
-			GL_UNSIGNED_BYTE, bottom.textureData);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, 3, 512, 512, 0, GL_RGB,
-			GL_UNSIGNED_BYTE, front.textureData);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, 3, 512, 512, 0, GL_RGB,
-			GL_UNSIGNED_BYTE, back.textureData);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	cubeMapTex = glGetUniformLocation(program, "cubeMap");
-	glUniform1i(cubeMapTex, texName[0]);
+	//cubeMapTex = glGetUniformLocation(program, "cubeMap");
+	//glUniform1i(cubeMapTex, *tex_cube);
 
 	glDisable(GL_TEXTURE_CUBE_MAP);
 
@@ -603,7 +625,8 @@ void createCubeMapModel() {
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, 3 * 36 * sizeof(float), &points,
-			GL_STATIC_DRAW);
+	GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -613,14 +636,13 @@ void createCubeMapModel() {
 
 }
 
-void drawEnvironmentMap(){
-	glDepthMask(GL_FALSE);
-	glUseProgram(program);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMapTex);
-	glColor3f(1,0.4,1);
-	glBindVertexArray(vao);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glDepthMask(GL_TRUE);
+void drawEnvironmentMap() {
+	glDepthMask (GL_FALSE);
+	glUseProgram (phongProg);
+	glActiveTexture (GL_TEXTURE0);
+	glBindTexture (GL_TEXTURE_CUBE_MAP, *tex_cube);
+	glBindVertexArray (vao);
+	glDrawArrays (GL_TRIANGLES, 0, 36);
+	glDepthMask (GL_TRUE);
 }
 
