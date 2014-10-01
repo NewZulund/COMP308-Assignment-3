@@ -51,7 +51,7 @@
 #include "define.h"
 #include "textfile.cpp"
 
-void initShaders();
+void initShader(GLuint * v, GLuint * f, char * vertFile, char * fragFile, GLuint * prog);
 void setCamera();
 void setLight();
 void draw2D();
@@ -69,6 +69,8 @@ void reshape(int w, int h);
 void createCubemap();
 void createCubeMapModel();
 void drawEnvironmentMap();
+
+void viewChanged();
 
 G308_Geometry * table;
 G308_Geometry * sphere;
@@ -91,19 +93,22 @@ float spotYRot = 0;
 float spotZRot = 0;
 float spotCutOff = 7.0f;
 
-GLuint v, f,sv,sf,ev,ef, f2, cubeMapTex;
-GLuint phongProg, skyProg, enviroProg;
+GLuint v, f,sv,sf,ev,ef,bv,bf, f2, cubeMapTex;
+GLuint phongProg, skyProg, enviroProg, bumpProg;
 GLuint * tex_cube = NULL;
 
 GLuint vbo ,vao;
 
-void initShaders() {
+void initShader(GLuint * ver, GLuint * fra, char * vertFile, char * fragFile, GLuint * prog) {
+	GLuint v = *ver;
+	GLuint f = *fra;
+
 	char * vs = NULL;
 	char * fs = NULL;
 	v = glCreateShader(GL_VERTEX_SHADER);
 	f = glCreateShader(GL_FRAGMENT_SHADER);
-	vs = textFileRead("shaders/phongVert.vert");
-	fs = textFileRead("shaders/phongFrag.frag");
+	vs = textFileRead(vertFile);
+	fs = textFileRead(fragFile);
 	const char * ff = fs;
 	const char * vv = vs;
 	glShaderSource(v, 1, &vv, NULL);
@@ -112,52 +117,14 @@ void initShaders() {
 	free(fs);
 	glCompileShader(v);
 	glCompileShader(f);
-	phongProg = glCreateProgram();
-	glAttachShader(phongProg, f);
-	glAttachShader(phongProg, v);
-	glLinkProgram(phongProg);
-	glUseProgram(phongProg);
+	*prog = glCreateProgram();
+	glAttachShader(*prog, f);
+	glAttachShader(*prog, v);
+	glLinkProgram(*prog);
+	glUseProgram(*prog);
 
-
-	//Skybox prog
-	vs = NULL;
-	fs = NULL;
-	sv = glCreateShader(GL_VERTEX_SHADER);
-	sf = glCreateShader(GL_FRAGMENT_SHADER);
-	vs = textFileRead("shaders/skymap.vert");
-	fs = textFileRead("shaders/skymap.frag");
-	ff = fs;
-	vv = vs;
-	glShaderSource(sv, 1, &vv, NULL);
-	glShaderSource(sf, 1, &ff, NULL);
-	free(vs);
-	free(fs);
-	glCompileShader(sv);
-	glCompileShader(sf);
-	skyProg = glCreateProgram();
-	glAttachShader(skyProg, sf);
-	glAttachShader(skyProg, sv);
-	glLinkProgram(skyProg);
-
-	//Environment Map Program
-	vs = NULL;
-	fs = NULL;
-	ev = glCreateShader(GL_VERTEX_SHADER);
-	ef = glCreateShader(GL_FRAGMENT_SHADER);
-	vs = textFileRead("shaders/enviroVert.vert");
-	fs = textFileRead("shaders/enviroFrag.frag");
-	ff = fs;
-	vv = vs;
-	glShaderSource(ev, 1, &vv, NULL);
-	glShaderSource(ef, 1, &ff, NULL);
-	free(vs);
-	free(fs);
-	glCompileShader(ev);
-	glCompileShader(ef);
-	enviroProg = glCreateProgram();
-	glAttachShader(enviroProg, ef);
-	glAttachShader(enviroProg, ev);
-	glLinkProgram(enviroProg);
+	*ver = v;
+	*fra = f;
 
 }
 
@@ -238,6 +205,7 @@ void keyboard(unsigned char key, int x, int y) {
 	default:
 		break;
 	}
+	viewChanged();
 	glutPostRedisplay();
 }
 
@@ -278,17 +246,9 @@ void drawObjects() {
 
 	glPushMatrix();
 	glScalef(0.2f, 0.2f, 0.2f);
-	glTranslatef(0, 0, 0);
+	glTranslatef(0, 0.5, 0);
 	glColor3f(1, 1, 0.8f);
 	bunny->RenderGeometry();
-	glPopMatrix();
-
-
-	glPushMatrix();
-	glScalef(0.2f, 0.2f, 0.2f);
-	glTranslatef(4.0f, 1.0f, 4.0f);
-	glColor3f(1, 0, 0);
-	torus->RenderGeometry();
 	glPopMatrix();
 
 	glPushMatrix();
@@ -297,6 +257,17 @@ void drawObjects() {
 	glColor3f(1, 1, 1);
 	box->RenderGeometry();
 	glPopMatrix();
+
+
+	glUseProgram(bumpProg);
+	glPushMatrix();
+	glScalef(0.2f, 0.2f, 0.2f);
+	glTranslatef(4.0f, 1.0f, 4.0f);
+	glColor3f(1, 0, 0);
+	torus->RenderGeometry();
+	glPopMatrix();
+
+
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
@@ -308,21 +279,22 @@ void createCubemap() {
 
 	tex_cube = (GLuint*) malloc(sizeof(GLuint) * 8);
 
-	TextureInfo front;
-	loadTextureFromJPEG("cubemap/front.jpg", &front);
-	TextureInfo back;
-	loadTextureFromJPEG("cubemap/back.jpg", &back);
-	TextureInfo left;
-	loadTextureFromJPEG("cubemap/left.jpg", &left);
-	TextureInfo right;
-	loadTextureFromJPEG("cubemap/right.jpg", &right);
-	TextureInfo top;
-	loadTextureFromJPEG("cubemap/top.jpg", &top);
-	TextureInfo bottom;
-	loadTextureFromJPEG("cubemap/bottom.jpg", &bottom);
+//	TextureInfo front;
+//	loadTextureFromJPEG("cubemap/front.jpg", &front);
+//	TextureInfo back;
+//	loadTextureFromJPEG("cubemap/back.jpg", &back);
+//	TextureInfo left;
+//	loadTextureFromJPEG("cubemap/left.jpg", &left);
+//	TextureInfo right;
+//	loadTextureFromJPEG("cubemap/right.jpg", &right);
+//	TextureInfo top;
+//	loadTextureFromJPEG("cubemap/top.jpg", &top);
+//	TextureInfo bottom;
+//	loadTextureFromJPEG("cubemap/bottom.jpg", &bottom);
 
-	/*TextureInfo front;
-	loadTextureFromJPEG("cubemap/humus/heroessquare/poz.jpg", &front);
+
+	TextureInfo front;
+	loadTextureFromJPEG("cubemap/humus/heroessquare/posz.jpg", &front);
 	TextureInfo back;
 	loadTextureFromJPEG("cubemap/humus/heroessquare/negz.jpg", &back);
 	TextureInfo left;
@@ -330,39 +302,40 @@ void createCubemap() {
 	TextureInfo right;
 	loadTextureFromJPEG("cubemap/humus/heroessquare/posx.jpg", &right);
 	TextureInfo top;
-	loadTextureFromJPEG("cubemap/humus/heroessquare/negy.jpg", &top);
+	loadTextureFromJPEG("cubemap/humus/heroessquare/posy.jpg", &top);
 	TextureInfo bottom;
-	loadTextureFromJPEG("cubemap/humus/heroessquare/posy.jpg", &bottom);	 */
+	loadTextureFromJPEG("cubemap/humus/heroessquare/negy.jpg", &bottom);
 
 	glEnable(GL_TEXTURE_CUBE_MAP);
 	glActiveTexture(GL_TEXTURE0);
 
-	glGenTextures(1, tex_cube);
-	printf("Swag \n");
-	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
-	printf("Swag 2 \n");
+	GLuint height = 1024;
+	GLuint width = 1024;
 
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, 512, 512, 0,
+	glGenTextures(1, tex_cube);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
+
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, height, width, 0,
 			GL_RGB,
 			GL_UNSIGNED_BYTE, right.textureData);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, 512, 512, 0,
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, height, width, 0,
 			GL_RGB,
 			GL_UNSIGNED_BYTE, left.textureData);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, 512, 512, 0,
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, height, width, 0,
 			GL_RGB,
 			GL_UNSIGNED_BYTE, bottom.textureData);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, 512, 512, 0,
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, height, width, 0,
 			GL_RGB,
 			GL_UNSIGNED_BYTE, top.textureData);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, 512, 512, 0,
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, height, width, 0,
 			GL_RGB,
 			GL_UNSIGNED_BYTE, front.textureData);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, *tex_cube);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, 512, 512, 0,
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, height, width, 0,
 			GL_RGB,
 			GL_UNSIGNED_BYTE, back.textureData);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -487,8 +460,8 @@ void setLight() {
 
 	//Point light
 	glPushMatrix();
-	glTranslatef(-1, 1.5, 3);
-	glutSolidSphere(0.1f, 10, 10);
+	glTranslatef(1, 1.5, 3);
+	//glutSolidSphere(0.1f, 10, 10);
 	float pointdiffuse[] = { 0.2f, 0.2f, 0.2f, 1.0f };
 	float pointambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	float pointspecular[] = { 0.3f, 0.3f, 0.3f, 1.0f };
@@ -504,10 +477,10 @@ void setLight() {
 	//TODO make directional
 	//Directional light
 	glPushMatrix();
-	float directdirection[] = { 5.0f, 0.0f, 0.0f, 0.0f };
-	float directdiffuse[] = { 0.3, 0.3, 0.2, 1.0f };
+	float directdirection[] = { -5.0f, 0.0f, 3.0f, 0.0f };
+	float directdiffuse[] = { 0.4, 0.4, 0.2, 1.0f };
 	float directambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	float directspecular[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	float directspecular[] = { 0.4f, 0.4f, 0.2f, 1.0f };
 
 	glLightfv(GL_LIGHT2, GL_POSITION, directdirection);
 	glLightfv(GL_LIGHT2, GL_SPECULAR, directspecular);
@@ -572,7 +545,6 @@ void draw2D() {
 	drawText("WASD : Spotlight Controls | A/E Cutoff", -0.8f, 0.9f);
 	drawText("ARROW KEYS : Camera Controls | t Rotate models", -0.8f, 0.85f);
 	drawText("Press , or . to zoom in and out", -0.8f, 0.75f);
-	drawText("Mouse menu for animation control. ", -0.8f, 0.7f);
 
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -585,7 +557,7 @@ void draw2D() {
 }
 
 void drawText(char * words, float x, float y) {
-
+	glUseProgram(0);
 	glPushMatrix();
 	glLoadIdentity();
 
@@ -652,7 +624,13 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
-	initShaders();
+
+	//void initShader(int * vs, int * fs, char * vertFile, char * fragFile, GLuint * prog) {
+	initShader(&v, &f, "shaders/phongVert.vert", "shaders/phongFrag.frag", &phongProg);
+	initShader(&sv, &sf, "shaders/skymap.vert", "shaders/skymap.frag", &skyProg);
+	initShader(&ev , &ef,"shaders/enviroVert.vert","shaders/enviroFrag.frag", &enviroProg);
+	initShader(&bv, &bf, "shaders/bumpVert.vert", "shaders/bumpFrag.frag", &bumpProg);
+
 	loadObjects();
 
 	display();
@@ -708,5 +686,12 @@ void drawEnvironmentMap() {
 	glDrawArrays (GL_TRIANGLES, 0, 36);
 	glDepthMask (GL_TRUE);
 	glUseProgram (phongProg);
+}
+
+void viewChanged(){
+	glUseProgram(enviroProg);
+	GLint camRot = glGetUniformLocation(enviroProg, "camRot");
+
+	glUniform3f(camRot, xRot, yRot, zRot);
 }
 
