@@ -94,7 +94,7 @@ float spotZRot = 0;
 float spotCutOff = 7.0f;
 
 GLuint v, f,sv,sf,ev,ef,bv,bf, f2, cubeMapTex;
-GLuint phongProg, skyProg, enviroProg, bumpProg;
+GLuint phongProg, skyProg, enviroProg;
 GLuint * tex_cube = NULL;
 
 GLuint vbo ,vao;
@@ -258,8 +258,6 @@ void drawObjects() {
 	box->RenderGeometry();
 	glPopMatrix();
 
-
-	glUseProgram(bumpProg);
 	glPushMatrix();
 	glScalef(0.2f, 0.2f, 0.2f);
 	glTranslatef(4.0f, 1.0f, 4.0f);
@@ -629,7 +627,6 @@ int main(int argc, char** argv) {
 	initShader(&v, &f, "shaders/phongVert.vert", "shaders/phongFrag.frag", &phongProg);
 	initShader(&sv, &sf, "shaders/skymap.vert", "shaders/skymap.frag", &skyProg);
 	initShader(&ev , &ef,"shaders/enviroVert.vert","shaders/enviroFrag.frag", &enviroProg);
-	initShader(&bv, &bf, "shaders/bumpVert.vert", "shaders/bumpFrag.frag", &bumpProg);
 
 	loadObjects();
 
