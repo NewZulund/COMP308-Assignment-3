@@ -322,7 +322,9 @@ void G308_Geometry::RenderGeometry() {
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
 	}else if (fn[1] == 'p') {	//sphere
 		GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+		GLfloat mat_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
 		GLfloat mat_shininess[] = { 5.0 };
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
 	}else if (fn[1] == 'e') {	//Teapot
@@ -330,7 +332,13 @@ void G308_Geometry::RenderGeometry() {
 		GLfloat mat_shininess[] = { 90.0 };
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
-	}else {
+	}else if (fn[1] == 'a') {	//Table
+		GLfloat mat_specular[] = { 1, 1, 1, 1.0 };
+		GLfloat mat_shininess[] = { 14.0 };
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
+	}
+	else {
 		GLfloat mat_specular[] = { 0.05, 0.05, 0.05, 1.0 };
 		GLfloat mat_shininess[] = { 56.0 };
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);

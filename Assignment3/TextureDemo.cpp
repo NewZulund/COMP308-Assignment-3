@@ -80,7 +80,7 @@ G308_Geometry * box;
 
 int lockLights = FALSE;
 
-float zoom = 100;
+float zoom = 0;
 float xRot = 0;
 float yRot = 0;
 float zRot = 0;
@@ -91,39 +91,30 @@ float spotYRot = 0;
 float spotZRot = 0;
 float spotCutOff = 7.0f;
 
-GLuint v, f,sv,sf, f2, phongProg, skyProg, cubeMapTex;
+GLuint v, f,sv,sf,ev,ef, f2, cubeMapTex;
+GLuint phongProg, skyProg, enviroProg;
 GLuint * tex_cube = NULL;
 
-GLuint vbo;
-GLuint vao;
+GLuint vbo ,vao;
 
 void initShaders() {
 	char * vs = NULL;
 	char * fs = NULL;
-
 	v = glCreateShader(GL_VERTEX_SHADER);
 	f = glCreateShader(GL_FRAGMENT_SHADER);
-
 	vs = textFileRead("shaders/phongVert.vert");
 	fs = textFileRead("shaders/phongFrag.frag");
-
 	const char * ff = fs;
 	const char * vv = vs;
-
 	glShaderSource(v, 1, &vv, NULL);
 	glShaderSource(f, 1, &ff, NULL);
-
 	free(vs);
 	free(fs);
-
 	glCompileShader(v);
 	glCompileShader(f);
-
 	phongProg = glCreateProgram();
-
 	glAttachShader(phongProg, f);
 	glAttachShader(phongProg, v);
-
 	glLinkProgram(phongProg);
 	glUseProgram(phongProg);
 
@@ -131,31 +122,42 @@ void initShaders() {
 	//Skybox prog
 	vs = NULL;
 	fs = NULL;
-
 	sv = glCreateShader(GL_VERTEX_SHADER);
 	sf = glCreateShader(GL_FRAGMENT_SHADER);
-
 	vs = textFileRead("shaders/skymap.vert");
 	fs = textFileRead("shaders/skymap.frag");
-
 	ff = fs;
 	vv = vs;
-
 	glShaderSource(sv, 1, &vv, NULL);
 	glShaderSource(sf, 1, &ff, NULL);
-
 	free(vs);
 	free(fs);
-
 	glCompileShader(sv);
 	glCompileShader(sf);
-
 	skyProg = glCreateProgram();
-
 	glAttachShader(skyProg, sf);
 	glAttachShader(skyProg, sv);
-
 	glLinkProgram(skyProg);
+
+	//Environment Map Program
+	vs = NULL;
+	fs = NULL;
+	ev = glCreateShader(GL_VERTEX_SHADER);
+	ef = glCreateShader(GL_FRAGMENT_SHADER);
+	vs = textFileRead("shaders/enviroVert.vert");
+	fs = textFileRead("shaders/enviroFrag.frag");
+	ff = fs;
+	vv = vs;
+	glShaderSource(ev, 1, &vv, NULL);
+	glShaderSource(ef, 1, &ff, NULL);
+	free(vs);
+	free(fs);
+	glCompileShader(ev);
+	glCompileShader(ef);
+	enviroProg = glCreateProgram();
+	glAttachShader(enviroProg, ef);
+	glAttachShader(enviroProg, ev);
+	glLinkProgram(enviroProg);
 
 }
 
@@ -250,6 +252,23 @@ void drawObjects() {
 	glEnable(GL_BLEND);
 	glEnable(GL_COLOR_MATERIAL);
 
+
+	glUseProgram(enviroProg);
+	glPushMatrix();
+	glScalef(0.2f, 0.2f, 0.2f);
+	glTranslatef(-4, 2, 4);
+	glColor3ub(205, 127, 50);
+	sphere->RenderGeometry();
+	glPopMatrix();
+
+	glPushMatrix();
+	glScalef(0.2f, 0.2f, 0.2f);
+	glTranslatef(-4, 0, -4);
+	glColor3f(0.8, 0.8, 1);
+	teapot->RenderGeometry();
+	glPopMatrix();
+
+	glUseProgram(phongProg);
 	glPushMatrix();
 	glScalef(0.2f, 0.2f, 0.2f);
 	glTranslatef(0, 0, 0);
@@ -264,19 +283,6 @@ void drawObjects() {
 	bunny->RenderGeometry();
 	glPopMatrix();
 
-	glPushMatrix();
-	glScalef(0.2f, 0.2f, 0.2f);
-	glTranslatef(-4, 2, 4);
-	glColor3ub(205, 127, 50);
-	sphere->RenderGeometry();
-	glPopMatrix();
-
-	glPushMatrix();
-	glScalef(0.2f, 0.2f, 0.2f);
-	glTranslatef(-4, 0, -4);
-	glColor3f(0.8, 0.8, 1);
-	teapot->RenderGeometry();
-	glPopMatrix();
 
 	glPushMatrix();
 	glScalef(0.2f, 0.2f, 0.2f);
@@ -498,10 +504,10 @@ void setLight() {
 	//TODO make directional
 	//Directional light
 	glPushMatrix();
-	float directdirection[] = { 0.0f, -1.0f, 0.0f, 0.0f };
-	float directdiffuse[] = { 0.0, 0.0, 0.0, 1.0f };
+	float directdirection[] = { 5.0f, 0.0f, 0.0f, 0.0f };
+	float directdiffuse[] = { 0.3, 0.3, 0.2, 1.0f };
 	float directambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	float directspecular[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float directspecular[] = { 0.2f, 0.2f, 0.2f, 1.0f };
 
 	glLightfv(GL_LIGHT2, GL_POSITION, directdirection);
 	glLightfv(GL_LIGHT2, GL_SPECULAR, directspecular);
